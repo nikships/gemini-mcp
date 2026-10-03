@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "gemini": {
+      "command": "/home/factory-user/.local/bin/uv",
+      "args": [
+        "--directory",
+        "/home/factory-user/gemini-mcp",
+        "run",
+        "--frozen",
+        "gemini-mcp"
+      ],
+      "env": {
+        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY",
+        "GEMINI_MODEL": "gemini-3.6-flash"
+      }
+    }
+  }
+}
