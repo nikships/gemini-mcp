@@ -22,6 +22,9 @@ def google(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     models = SimpleNamespace(generate_content=AsyncMock(), list=AsyncMock())
     interaction_api = SimpleNamespace(
+        sdk_configuration=SimpleNamespace(
+            retry_config=SimpleNamespace(strategy="default")
+        ),
         create=AsyncMock(
             return_value=interactions.Interaction.model_validate(
                 {
@@ -35,7 +38,7 @@ def google(monkeypatch):
                     ],
                 }
             )
-        )
+        ),
     )
     async_client = MagicMock()
     async_client.__aenter__.return_value = SimpleNamespace(
@@ -212,7 +215,7 @@ async def test_list_models(google):
 async def test_mcp_discovery_and_generation(google):
     async with Client(server.create_server()) as client:
         tools = await client.list_tools()
-        assert {tool.name for tool in tools} == {"ping", "generate_text", "list_models"}
+        assert {"ping", "generate_text", "list_models"} <= {tool.name for tool in tools}
         result = await client.call_tool("generate_text", {"prompt": "Hi"})
         assert result.structured_content == {
             "id": "interaction-123",

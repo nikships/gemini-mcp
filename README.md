@@ -53,12 +53,23 @@ paths if you move the project. Client configuration formats can vary.
 | `ping` | Local health check and current default model; no API key needed |
 | `generate_text` | Create a Gemini interaction and return its ID, status, and text |
 | `list_models` | List models available to your Google API key |
+| `list_media_models` | Current documented media defaults and supported model choices; no key needed |
+| `generate_image` | Nano Banana image generation and editing, with optional Google Search |
+| `generate_video` / `generate_omni` | Omni video generation, editing, extension, and first/last-frame interpolation |
+| `transcribe_audio` | Dedicated speech recognition, smart/verbatim modes, diarization, and word timestamps |
+| `generate_speech` | Single- or two-speaker TTS with voice, language, and delivery style controls |
+| `generate_music` | Lyria songs, instrumental music, clips, lyrics, and image-inspired music |
+| `analyze_media` | Understand images, audio, video (static/agentic), and PDFs |
+| `get_interaction` | Retrieve or poll stored interactions and save inline media |
+| `cancel_interaction` / `delete_interaction` | Explicitly cancel background work or delete stored Google interactions |
+| `upload_file` / `get_file` / `list_files` / `delete_file` | Manage reusable Google Files inputs and processing readiness |
+| `download_file` | Stream an ACTIVE generated Google file to a unique local file |
 
 `generate_text` calls `client.aio.interactions.create`. It accepts `prompt`,
 optional `model`, optional `system_instruction`, `max_output_tokens` (default
 4096, allowed range 1–65536), optional `previous_interaction_id`, and `store`
 (default `false`). Model-specific
-limits still apply. Set `GEMINI_MODEL` to change the default, `gemini-3.6-flash`,
+limits still apply. Set `GEMINI_MODEL` to change the default, `gemini-3.8-flash`,
 or pass `model` per request. Use `list_models` to check your account's access.
 
 Generation now returns a structured object, not the old bare text string:
@@ -74,14 +85,202 @@ the returned `id` as `previous_interaction_id` on your next call. Keep
 retrieval or continuation; it does not bypass Google's other data policies.
 System instructions and generation options are supplied on each call.
 
-Requests are non-streaming and foreground-only. The returned status is preserved
-even if text is empty, rather than reporting an incomplete or blocked response
-as successful text. `list_models` still uses the SDK's model-discovery endpoint.
+`generate_text` remains non-streaming and foreground-only. The returned status
+is preserved even if text is empty, rather than reporting an incomplete or
+blocked response as successful text. `list_models` still uses the SDK's
+model-discovery endpoint.
 
-Google requests use asynchronous I/O and a 60-second request timeout. Clients
+Text, discovery, and metadata requests use a 60-second timeout. Media creation,
+upload, and download default to 600 seconds, configurable with `timeout_seconds`
+(1–1800). Google requests use asynchronous I/O. Clients
 are closed after each tool call. Upstream error details are redacted from tool
 errors. Prompts are sent to Google and API use may incur charges. Missing keys
 do not prevent startup, tool discovery, or health checks.
+
+## Media models and API boundaries
+
+Model IDs and request formats were verified on **2026-10-03** using the
+`retrieving-developer-knowledge` skill and Google Developer Knowledge MCP.
+The [official model catalog](https://ai.google.dev/gemini-api/docs/models) and
+task-specific guides are the source of truth, not remembered model names.
+
+| Capability | Default | Other current choices |
+| --- | --- | --- |
+| Text and media analysis | `gemini-3.8-flash` | Text retains its explicit model/environment override |
+| Images | `gemini-3.1-flash-image` | `gemini-3.1-flash-lite-image`, `gemini-3-pro-image` |
+| Video / Omni | `gemini-omni-1.1-flash` | None |
+| Transcription | `gemini-3.5-transcribe` | None |
+| TTS | `gemini-3.8-flash-tts` | `gemini-3.8-flash-lite-tts` |
+| Music | `lyria-3.5` | `lyria-3-clip-preview`, the current short-clip specialist |
+
+Media tool model choices are constrained to these current families, with **no
+legacy fallback**. `GEMINI_MODEL` affects only `generate_text`, not media tools.
+This is a dated snapshot, not automatic model discovery or a promise of account
+access. `list_models` reports account availability. Refresh the catalog from
+official docs before adding future models.
+
+All generation and analysis calls use `client.aio.interactions.create`.
+There is no `generateContent`, Imagen, or Veo fallback. **Veo**, **Live audio/live
+transcription**, **Lyria RealTime**, and **voice design/replication** have separate
+APIs and are intentionally outside this Interactions-only suite. TTS accepts
+existing custom voice IDs but does not create or clone voices.
+
+Sources and model-specific constraints are recorded in
+[`docs/media-api.md`](docs/media-api.md).
+
+## Media inputs, outputs, and examples
+
+Tool arguments below are JSON for your MCP client, not terminal commands.
+`media` items require `type` (`image`, `audio`, `video`, or `document`),
+`mime_type`, and **exactly one** of:
+
+- `path`: an absolute regular file path on the machine running this server.
+- `data`: plain base64, without a `data:` prefix.
+- `uri`: a Google Files URI or another URI supported by the selected model.
+  URI inputs are passed to Google, never fetched by this server.
+
+Local/base64 inputs have a **10 MiB total server memory limit** per request,
+independent of Google's larger file/model limits. For larger input, call
+`upload_file` with an absolute `path` and `mime_type`. Poll `get_file` using its
+`name` until `state` is `ACTIVE`, then use the returned `uri` and `mime_type`.
+`PROCESSING` is not ready and `FAILED` should not be retried as ready.
+Uploaded files expire after 48 hours. Uploading sends the file to Google.
+Deleting an uploaded file can prevent pending interactions from using it.
+
+Media results include `id`, `status`, `model`, `text`, ordered `outputs`, and
+`usage` when available. All model output blocks are retained, including
+interleaved lyrics, multiple images, and transcription `word_info` annotations.
+Stored inputs and thought steps are not returned.
+
+Inline binary outputs are decoded and saved in `GEMINI_OUTPUT_DIR`, defaulting
+to `generated-media/` under the server's working directory. Set an absolute
+`output_directory` per call to override it. File names are unique and private
+(mode `0600`), existing files are never overwritten, and the returned `path` is
+absolute. Actual MIME types determine extensions; WAV data is saved as returned,
+without adding a second WAV header. Unknown formats use `.bin`. Local outputs
+remain until you remove them.
+
+Base64 is omitted from MCP results by default to avoid filling model context.
+Set `include_inline_data: true` if you also need it. Local output paths refer to
+the server machine, not necessarily the MCP client's machine.
+
+Omni defaults to `delivery: "uri"` for large videos. These outputs have `uri`
+and, for recognized Google Files URIs, `file_name`. Poll `get_file` until ACTIVE,
+then call `download_file` with that `file_name` to stream it to disk. Downloads
+accept Google resource names only, not arbitrary URLs. Alternatively request
+`delivery: "inline"` to save bytes immediately. Google's current Omni docs note
+that `get_interaction` can return inline data even when creation used URI delivery.
+
+### Image generation or editing
+
+Call `generate_image`:
+
+```json
+{
+  "prompt": "Create a cinematic watercolor landscape",
+  "aspect_ratio": "16:9",
+  "image_size": "2K",
+  "store": true
+}
+```
+
+To edit a local image, supply
+`"media": [{"type": "image", "mime_type": "image/png", "path": "/ABSOLUTE/image.png"}]`.
+To edit a stored result, provide its `id` as `previous_interaction_id`.
+Use `include_text: false` for image-only output.
+
+### Omni video generation and editing
+
+Call `generate_video` or `generate_omni`:
+
+```json
+{
+  "prompt": "A slow tracking shot of waves at sunset, with ocean sounds",
+  "aspect_ratio": "16:9",
+  "resolution": "1080p",
+  "duration_seconds": 8,
+  "store": true,
+  "background": true
+}
+```
+
+Both tools use the same Omni model and controls. Supply ordered reference images
+for first/last frames and describe the transition in the prompt. Image, audio,
+and video references can be combined. Prompt for an edit or extension, or use
+`task: "edit"` / `"extend"` with an input video or stored `previous_interaction_id`.
+Prompt-based control is preferred; explicit tasks impose stricter constraints.
+1080p and 4K are upscaled. See the source guide for extension limits and regions.
+
+### Transcription
+
+Call `transcribe_audio`:
+
+```json
+{
+  "audio": {"type": "audio", "mime_type": "audio/mp3", "path": "/ABSOLUTE/audio.mp3"},
+  "language_codes": ["en-US"],
+  "diarization": true,
+  "word_timestamps": true
+}
+```
+
+For cleaned-up prose, use `mode: "smart"` without diarization/timestamps.
+`custom_vocabulary` cannot be combined with diarization or word timestamps.
+
+### TTS
+
+Call `generate_speech`:
+
+```json
+{"text": "Welcome! <short pause> Let's begin.", "voice": "Kore", "style": "warm and friendly"}
+```
+
+For two speakers, use structured `turns` instead of `text`:
+
+```json
+{
+  "turns": [
+    {"text": "Hello!", "speaker": "Joe", "style": "cheerful"},
+    {"text": "Hi Joe.", "speaker": "Jane", "style": "relaxed"}
+  ],
+  "speakers": [
+    {"speaker": "Joe", "voice": "Puck"},
+    {"speaker": "Jane", "voice": "Kore"}
+  ]
+}
+```
+
+Text is spoken verbatim. Delivery directions belong in `style`, which maps to
+`speech_metadata`, not inline prose. Momentary vocal tags can remain in text.
+Audio defaults to WAV; `audio/l16`, `audio/mulaw`, and `audio/alaw` are also
+supported through `mime_type`. Set `sample_rate` in Hz if needed.
+
+### Lyria music
+
+Call `generate_music`:
+
+```json
+{
+  "prompt": "A two-minute instrumental jazz track in D minor, with piano, upright bass, and brushed drums",
+  "mime_type": "audio/mp3"
+}
+```
+
+Prompt for song duration, structure, BPM, language, and custom lyrics. Music can
+be inspired by up to ten image references. Use `model: "lyria-3-clip-preview"`
+for short clips. WAV output requires `lyria-3.5`.
+
+### Background and multi-turn work
+
+Media tools accept `background: true` only with explicit `store: true`.
+Use the returned `id` with `get_interaction` until a terminal status is returned.
+The server does not auto-poll, silently enable storage, or auto-retry generation
+(which could create duplicate charges). Cancel by ID with `cancel_interaction`.
+Keep `store: true` on turns you want to retrieve or edit later, and provide
+`previous_interaction_id` to tools that support continuation. Options such as
+output format, voices, and search are scoped to each call and must be repeated.
+Status is preserved for blocked, incomplete, failed, queued, or cancelled work;
+empty output never overrides the upstream status.
 
 ## Develop and validate
 

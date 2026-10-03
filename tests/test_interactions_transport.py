@@ -5,27 +5,8 @@ import json
 import httpx
 import pytest
 from fastmcp.exceptions import ToolError
-from google import genai
 
 from gemini_mcp import server
-
-
-@pytest.fixture
-def sdk_transport(monkeypatch):
-    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
-    monkeypatch.delenv("GEMINI_MODEL", raising=False)
-    real_client = genai.Client
-
-    def install(handler):
-        def factory(**kwargs):
-            kwargs["http_options"].httpx_async_client = httpx.AsyncClient(
-                transport=httpx.MockTransport(handler)
-            )
-            return real_client(**kwargs)
-
-        monkeypatch.setattr(server.genai, "Client", factory)
-
-    return install
 
 
 async def test_real_sdk_posts_interactions(sdk_transport):
@@ -89,3 +70,21 @@ async def test_real_sdk_error_is_redacted(sdk_transport):
     with pytest.raises(ToolError, match="HTTP 400") as exc:
         await server.generate_text("Hello")
     assert "sensitive-upstream-detail" not in str(exc.value)
+
+
+@pytest.mark.parametrize("status", [429, 500, 503])
+@pytest.mark.parametrize("tool", [server.generate_text, server.generate_image])
+async def test_generation_errors_do_not_retry_or_fallback(sdk_transport, status, tool):
+    requests = []
+
+    def handle(request):
+        requests.append(request)
+        return httpx.Response(
+            status,
+            json={"error": {"code": status, "message": "sensitive-detail"}},
+        )
+
+    sdk_transport(handle)
+    with pytest.raises(ToolError, match=f"HTTP {status}"):
+        await tool("Hello")
+    assert len(requests) == 1
