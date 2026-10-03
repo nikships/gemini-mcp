@@ -1,0 +1,180 @@
+{
+  "retrieved_on": "2026-10-03",
+  "attribution": "Portions of these guides are reproduced or modified from work created and shared by Google (https://developers.google.com/readme/policies) and used according to the Creative Commons 4.0 Attribution License (https://creativecommons.org/licenses/by/4.0/). Source links and modifications are listed with each excerpt.",
+  "license": "CC-BY-4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "sources": {
+    "image-generation": {
+      "title": "Nano Banana image generation",
+      "url": "https://ai.google.dev/gemini-api/docs/image-generation",
+      "sections": [
+        "Prompting guide and strategies"
+      ],
+      "modifications": [
+        "Selected sections only; unrelated API reference material omitted.",
+        "Normalized blank-line spacing in the Developer Knowledge rendering.",
+        "Omitted SDK code, illustrative images, and image-only comparison tables."
+      ],
+      "document_sha256": "3665c18d4d32a12b28767ade847856efae6146f5405d30e7f9e7bb7d6e526cae",
+      "excerpt_sha256": "f5a2060299763b6be0dd9f2438de900369aea612d163ec773557988382096bf0"
+    },
+    "omni": {
+      "title": "Generate and edit videos with Gemini Omni Flash",
+      "url": "https://ai.google.dev/gemini-api/docs/omni",
+      "sections": [
+        "Gemini Omni Flash prompt guide"
+      ],
+      "modifications": [
+        "Selected sections only; unrelated API reference material omitted.",
+        "Normalized blank-line spacing in the Developer Knowledge rendering."
+      ],
+      "document_sha256": "3d3147d27ed0c402a0232e17834c2a8b7cd923f98cc63177000341232adbc938",
+      "excerpt_sha256": "659f101a1618fa6f640c608d0ae99e45ca941776a64c30b6f34ccc05dd18a7f1"
+    },
+    "speech-generation": {
+      "title": "Text-to-speech generation (TTS)",
+      "url": "https://ai.google.dev/gemini-api/docs/speech-generation",
+      "sections": [
+        "Prompting guide"
+      ],
+      "modifications": [
+        "Selected sections only; unrelated API reference material omitted.",
+        "Normalized blank-line spacing in the Developer Knowledge rendering."
+      ],
+      "document_sha256": "ecfbe5b6b4081398f33bd3c6848f63933ff4c58453a5e604501a8e82c1ce0244",
+      "excerpt_sha256": "07ae8e894ea492f3ec11bb639dfbc2bf50ac46fd9884e45966106c1cee38eb8e"
+    },
+    "lyria-prompt-guide": {
+      "title": "Lyria prompt guide",
+      "url": "https://ai.google.dev/gemini-api/docs/lyria-prompt-guide",
+      "sections": [
+        "Prompt fundamentals",
+        "Genre and style",
+        "Instruments and textures",
+        "Song structure and timing",
+        "Lyrics and vocals",
+        "Musical parameters",
+        "Lyria 3.5 examples"
+      ],
+      "modifications": [
+        "Selected sections only; unrelated API reference material omitted.",
+        "Normalized blank-line spacing in the Developer Knowledge rendering.",
+        "Omitted the introduction and RealTime-only weighted-prompt/steering sections.",
+        "Removed the leading 'none ' from three rendered example prompt strings."
+      ],
+      "document_sha256": "0218dff2d0994a816eb35bece67950f2e43f1d3672e205d5487c3dd70a5fef54",
+      "excerpt_sha256": "d1942bb260f23079a4740129a49fe67e73acad756a2c350024e3d5198a4bd92d"
+    },
+    "music-generation": {
+      "title": "Generate music with Lyria 3.5",
+      "url": "https://ai.google.dev/gemini-api/docs/music-generation",
+      "sections": [
+        "Best practices"
+      ],
+      "modifications": [
+        "Selected sections only; unrelated API reference material omitted.",
+        "Normalized blank-line spacing in the Developer Knowledge rendering."
+      ],
+      "document_sha256": "8eaacd7d80b995497382329dfe10b647786a86e2b02f5b384e0eaada19c6ca2a",
+      "excerpt_sha256": "97acfa5b4c18408c048ad8bbc199c65723144423536739a5ab2615562f2084d0"
+    },
+    "transcribe": {
+      "title": "Audio transcription",
+      "url": "https://ai.google.dev/gemini-api/docs/transcribe",
+      "sections": [
+        "Overview",
+        "Language detection and hints",
+        "Custom vocabulary",
+        "Speaker diarization",
+        "Word-level timestamps",
+        "Transcription modes",
+        "Best practices"
+      ],
+      "modifications": [
+        "Selected sections only; unrelated API reference material omitted.",
+        "Normalized blank-line spacing in the Developer Knowledge rendering.",
+        "Omitted SDK code samples; configuration guidance is preserved."
+      ],
+      "document_sha256": "445e4b79897f286cb2707ad7d6b86c05bbc8228d1d069e05a631e23300a7b97d",
+      "excerpt_sha256": "dda110306ef05289fd827d1799d80e4953b1a38ab12e8f0985ba499754d2a0dc"
+    },
+    "files": {
+      "title": "Files API",
+      "url": "https://ai.google.dev/gemini-api/docs/files",
+      "sections": [
+        "File prompting strategies"
+      ],
+      "modifications": [
+        "Selected sections only; unrelated API reference material omitted.",
+        "Normalized blank-line spacing in the Developer Knowledge rendering.",
+        "Omitted illustrative image embeds; example prompts and responses are preserved."
+      ],
+      "document_sha256": "54b8c4f0a27d63db28d777d44122976d274152e028c05578c8507b05aa945885",
+      "excerpt_sha256": "c0cf6d6ac744159ede21b729cbd962bef1f0886215ddb864e5a234de222260f1"
+    },
+    "image-understanding": {
+      "title": "Image understanding",
+      "url": "https://ai.google.dev/gemini-api/docs/image-understanding",
+      "sections": [
+        "Tips and best practices"
+      ],
+      "modifications": [
+        "Selected sections only; unrelated API reference material omitted.",
+        "Normalized blank-line spacing in the Developer Knowledge rendering."
+      ],
+      "document_sha256": "771ddf41cdf6dbb5c1dfd0c1eace067457446b57dfd85b4a7539dbf3f2bfdc2b",
+      "excerpt_sha256": "7b5b18abe28f1d49e2c914aded9958340fb3eaf57179f0095f75e8ae2151668d"
+    },
+    "audio": {
+      "title": "Audio understanding",
+      "url": "https://ai.google.dev/gemini-api/docs/audio",
+      "sections": [
+        "Overview",
+        "Get a transcript",
+        "Refer to timestamps",
+        "Technical details about audio"
+      ],
+      "modifications": [
+        "Selected sections only; unrelated API reference material omitted.",
+        "Normalized blank-line spacing in the Developer Knowledge rendering.",
+        "Extracted exact prompt strings from SDK samples into standalone text blocks."
+      ],
+      "document_sha256": "29685c41778a0bd35f6892979dac1649b1b45d22ed833553ffa69557db4ce6de",
+      "excerpt_sha256": "0b1686a037d49ff26969b05718a38a882003b40d6c5d31f51bccb6e8c0bfd9c2"
+    },
+    "video-understanding": {
+      "title": "Video understanding",
+      "url": "https://ai.google.dev/gemini-api/docs/video-understanding",
+      "sections": [
+        "Agentic video understanding",
+        "Choose a processing mode",
+        "Multi-turn video conversations",
+        "Refer to timestamps in the content",
+        "Extract detailed insights from video",
+        "Technical details about videos"
+      ],
+      "modifications": [
+        "Selected sections only; unrelated API reference material omitted.",
+        "Normalized blank-line spacing in the Developer Knowledge rendering.",
+        "Extracted exact prompt strings from SDK samples into standalone text blocks."
+      ],
+      "document_sha256": "200ee809f4ab06832954650c554ef25f1f04987ffc560e7ea7afe79344614d40",
+      "excerpt_sha256": "ad5f2ad4ffbce324da8401349d5e76b1209df65e7deed7daf9171560e6b83bcd"
+    },
+    "document-processing": {
+      "title": "Document understanding",
+      "url": "https://ai.google.dev/gemini-api/docs/document-processing",
+      "sections": [
+        "Introduction",
+        "Document types",
+        "Best practices"
+      ],
+      "modifications": [
+        "Selected sections only; unrelated API reference material omitted.",
+        "Normalized blank-line spacing in the Developer Knowledge rendering."
+      ],
+      "document_sha256": "a9182c9cb11b7fb68f846dedb65a07105cc9284ffed0081c9ad5ee8bfbe0c130",
+      "excerpt_sha256": "7a0fbd7fe967631a41f48ff56d2d8e8a21f1f9e283b8aef596e0072d1a362adc"
+    }
+  }
+}

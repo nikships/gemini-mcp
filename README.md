@@ -64,6 +64,12 @@ paths if you move the project. Client configuration formats can vary.
 | `cancel_interaction` / `delete_interaction` | Explicitly cancel background work or delete stored Google interactions |
 | `upload_file` / `get_file` / `list_files` / `delete_file` | Manage reusable Google Files inputs and processing readiness |
 | `download_file` | Stream an ACTIVE generated Google file to a unique local file |
+| `get_image_prompt_guide` | Official Nano Banana image generation/editing prompt templates and examples |
+| `get_video_prompt_guide` | Official Omni guide for video, audio, editing, extension, timing, and reference tags |
+| `get_speech_prompt_guide` | Official TTS guide for transcripts, delivery styles, vocal tags, and dialogue |
+| `get_music_prompt_guide` | Official Lyria guide for genres, instruments, structure, lyrics, vocals, and examples |
+| `get_transcription_guide` | Official ASR guidance for language hints, custom vocabulary, modes, and clean audio |
+| `get_media_analysis_guide` | Official file-prompting guidance plus image, audio, video, or PDF analysis tips |
 
 `generate_text` calls `client.aio.interactions.create`. It accepts `prompt`,
 optional `model`, optional `system_instruction`, `max_output_tokens` (default
@@ -96,6 +102,39 @@ upload, and download default to 600 seconds, configurable with `timeout_seconds`
 are closed after each tool call. Upstream error details are redacted from tool
 errors. Prompts are sent to Google and API use may incur charges. Missing keys
 do not prevent startup, tool discovery, or health checks.
+
+## Official prompting guides
+
+The six guide tools are **read-only, offline, and free to call**. They need no API
+key, generate nothing, and send nothing to Google. Call the corresponding guide
+before constructing a media request. All take `{}` except
+`get_media_analysis_guide`, which accepts:
+
+```json
+{"media_type": "document"}
+```
+
+Use `image`, `audio`, `video`, or `document` (PDF), or omit `media_type` for `all`.
+The analysis guide always includes general file-prompting strategies.
+
+Guides return closely preserved **official wording, templates, and examples**,
+not AI-written summaries. `sources` includes each page's `title`, `url`,
+selected `sections`, `markdown`, and disclosed `modifications`. Results also
+include `retrieved_on`, related tools, supported models, Google attribution,
+the CC BY 4.0 license link, and separate `mcp_notes` explaining how the guidance
+maps to this server.
+
+This is a bundled **2026-10-03 documentation snapshot**, not a live lookup.
+Unrelated API code and illustrative media are omitted. The music guide preserves
+the batch-generation sections of Google's
+[Lyria prompt guide](https://ai.google.dev/gemini-api/docs/lyria-prompt-guide),
+not its separate RealTime API examples. Transcription uses configuration rather
+than a free-form prompt, so its guide preserves official configuration guidance
+instead of inventing prompting instructions. Separate voice APIs mentioned in
+the TTS guide are not implemented by this MCP.
+
+See [`docs/prompt-guides.md`](docs/prompt-guides.md) for sources, attribution,
+snapshot boundaries, and refresh instructions.
 
 ## Media models and API boundaries
 
@@ -294,8 +333,9 @@ uv build
 Tests mock Google requests, verify the real SDK's Interactions HTTP transport,
 and exercise real stdio subprocesses with both current and legacy MCP clients.
 They need no credentials and make no Google
-API calls. Live generation requires your own API key and is not covered by
-these tests.
+API calls. Guide tests also check preserved sections/examples, snapshot hashes,
+offline operation, read-only annotations, and MCP output schemas. Live generation
+requires your own API key and is not covered by these tests.
 
 To upgrade to newer stable dependencies intentionally:
 
