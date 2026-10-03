@@ -29,14 +29,7 @@ from gemini_mcp.catalog import (
     TranscribeModel,
     list_media_models,
 )
-from gemini_mcp.guides import (
-    get_image_prompt_guide,
-    get_media_analysis_guide,
-    get_music_prompt_guide,
-    get_speech_prompt_guide,
-    get_transcription_guide,
-    get_video_prompt_guide,
-)
+from gemini_mcp.guides import get_prompt_guide
 from gemini_mcp.media import (
     Delivery,
     ImageAspectRatio,
@@ -742,11 +735,10 @@ def create_server() -> FastMCP:
             "Google Interactions API tools. Google requests require an API key and "
             "may incur charges. Media tools use documented current models only, "
             "and save inline output to local files; URI output is not downloaded. "
-            "Use list_media_models for defaults and API boundaries. Local guide "
-            "tools return attributed official prompting guidance without an API key "
-            "or network request: get_image_prompt_guide, get_video_prompt_guide, "
-            "get_speech_prompt_guide, get_music_prompt_guide, get_transcription_guide, "
-            "and get_media_analysis_guide. Generation "
+            "Use list_media_models for defaults and API boundaries. "
+            "get_prompt_guide returns attributed official prompting guidance "
+            "(guide: image, video, speech, music, transcription, or analysis) "
+            "without an API key or network request. Generation "
             "returns id, status, text, and ordered media outputs. Set "
             "store=true to save a turn with Google, then pass its id as "
             "previous_interaction_id to continue. Background requires store=true; "
@@ -778,23 +770,15 @@ def create_server() -> FastMCP:
         download_file,
     ):
         server.tool(tool)
-    for guide in (
-        get_image_prompt_guide,
-        get_video_prompt_guide,
-        get_speech_prompt_guide,
-        get_music_prompt_guide,
-        get_transcription_guide,
-        get_media_analysis_guide,
-    ):
-        server.tool(
-            guide,
-            annotations={
-                "readOnlyHint": True,
-                "destructiveHint": False,
-                "idempotentHint": True,
-                "openWorldHint": False,
-            },
-        )
+    server.tool(
+        get_prompt_guide,
+        annotations={
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    )
     return server
 
 

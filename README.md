@@ -64,12 +64,7 @@ paths if you move the project. Client configuration formats can vary.
 | `cancel_interaction` / `delete_interaction` | Explicitly cancel background work or delete stored Google interactions |
 | `upload_file` / `get_file` / `list_files` / `delete_file` | Manage reusable Google Files inputs and processing readiness |
 | `download_file` | Stream an ACTIVE generated Google file to a unique local file |
-| `get_image_prompt_guide` | Official Nano Banana image generation/editing prompt templates and examples |
-| `get_video_prompt_guide` | Official Omni guide for video, audio, editing, extension, timing, and reference tags |
-| `get_speech_prompt_guide` | Official TTS guide for transcripts, delivery styles, vocal tags, and dialogue |
-| `get_music_prompt_guide` | Official Lyria guide for genres, instruments, structure, lyrics, vocals, and examples |
-| `get_transcription_guide` | Official ASR guidance for language hints, custom vocabulary, modes, and clean audio |
-| `get_media_analysis_guide` | Official file-prompting guidance plus image, audio, video, or PDF analysis tips |
+| `get_prompt_guide` | Official prompting guide by `guide`: `image`, `video`, `speech`, `music`, `transcription`, or `analysis` |
 
 `generate_text` calls `client.aio.interactions.create`. It accepts `prompt`,
 optional `model`, optional `system_instruction`, `max_output_tokens` (default
@@ -105,20 +100,28 @@ do not prevent startup, tool discovery, or health checks.
 
 ## Official prompting guides
 
-The six guide tools are **read-only, offline, and free to call**. They need no API
-key, generate nothing, and send nothing to Google. Call the corresponding guide
-before constructing a media request. All take `{}` except
-`get_media_analysis_guide`, which accepts:
+`get_prompt_guide` is **read-only, offline, and free to call**. It needs no API
+key, generates nothing, and sends nothing to Google. Call it before constructing
+a media request. It takes a required `guide`:
 
 ```json
-{"media_type": "document"}
+{"guide": "music"}
+```
+
+`guide` is one of `image`, `video`, `speech`, `music`, `transcription`, or
+`analysis`. For `analysis`, an optional `media_type` narrows the guide:
+
+```json
+{"guide": "analysis", "media_type": "document"}
 ```
 
 Use `image`, `audio`, `video`, or `document` (PDF), or omit `media_type` for `all`.
 The analysis guide always includes general file-prompting strategies.
+`media_type` is ignored for other guides.
 
-Guides return closely preserved **official wording, templates, and examples**,
-not AI-written summaries. `sources` includes each page's `title`, `url`,
+The full guide text is returned in the response, not just a link. Guides return
+closely preserved **official wording, templates, and examples**, not AI-written
+summaries. `sources` includes each page's `title`, `url`,
 selected `sections`, `markdown`, and disclosed `modifications`. Results also
 include `retrieved_on`, related tools, supported models, Google attribution,
 the CC BY 4.0 license link, and separate `mcp_notes` explaining how the guidance

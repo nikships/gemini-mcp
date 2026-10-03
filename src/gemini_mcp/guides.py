@@ -16,6 +16,7 @@ from gemini_mcp.catalog import (
 )
 
 AnalysisMedia = Literal["all", "image", "audio", "video", "document"]
+GuideName = Literal["image", "video", "speech", "music", "transcription", "analysis"]
 
 
 class GuideSource(BaseModel):
@@ -78,12 +79,7 @@ def _guide(
     )
 
 
-def get_image_prompt_guide() -> PromptGuide:
-    """Read Google's Nano Banana image generation/editing prompt templates.
-
-    Near-verbatim official guidance and examples with source links and attribution.
-    Local snapshot; no API key, network request, generation, or charges.
-    """
+def _image_guide() -> PromptGuide:
     return _guide(
         "Image generation and editing",
         ["generate_image"],
@@ -101,12 +97,7 @@ def get_image_prompt_guide() -> PromptGuide:
     )
 
 
-def get_video_prompt_guide() -> PromptGuide:
-    """Read Google's Omni video prompt guide, including edits, audio, and tags.
-
-    Covers generate_video and generate_omni, not the separate Veo API.
-    Local near-verbatim snapshot; no API key, network request, or charges.
-    """
+def _video_guide() -> PromptGuide:
     return _guide(
         "Omni video generation, editing, and extension",
         ["generate_video", "generate_omni"],
@@ -123,12 +114,7 @@ def get_video_prompt_guide() -> PromptGuide:
     )
 
 
-def get_speech_prompt_guide() -> PromptGuide:
-    """Read Google's Gemini TTS guide for transcripts, styles, and vocal tags.
-
-    Preserves the official workflow, including links to separate voice APIs.
-    Local near-verbatim snapshot; no API key, network request, or charges.
-    """
+def _speech_guide() -> PromptGuide:
     return _guide(
         "Speech generation (TTS)",
         ["generate_speech"],
@@ -148,12 +134,7 @@ def get_speech_prompt_guide() -> PromptGuide:
     )
 
 
-def get_music_prompt_guide() -> PromptGuide:
-    """Read Google's Lyria prompt guide for songs, clips, lyrics, and instruments.
-
-    Preserves batch-generation guidance; RealTime-only sections are omitted.
-    Local near-verbatim snapshot; no API key, network request, or charges.
-    """
+def _music_guide() -> PromptGuide:
     return _guide(
         "Lyria music generation",
         ["generate_music"],
@@ -170,12 +151,7 @@ def get_music_prompt_guide() -> PromptGuide:
     )
 
 
-def get_transcription_guide() -> PromptGuide:
-    """Read Google's Transcribe guidance for language hints, modes, and vocabulary.
-
-    This ASR model uses configuration, not free-form text prompting.
-    Local near-verbatim snapshot; no API key, network request, or charges.
-    """
+def _transcription_guide() -> PromptGuide:
     return _guide(
         "Audio transcription (ASR)",
         ["transcribe_audio"],
@@ -194,12 +170,7 @@ def get_transcription_guide() -> PromptGuide:
     )
 
 
-def get_media_analysis_guide(media_type: AnalysisMedia = "all") -> PromptGuide:
-    """Read Google's file-prompting guide plus image/audio/video/PDF guidance.
-
-    Select media_type to limit the modality-specific sources, or all for all four.
-    Local near-verbatim snapshot; no API key, network request, or charges.
-    """
+def _analysis_guide(media_type: AnalysisMedia) -> PromptGuide:
     source_names = {
         "image": "image-understanding",
         "audio": "audio",
@@ -235,3 +206,27 @@ def get_media_analysis_guide(media_type: AnalysisMedia = "all") -> PromptGuide:
             "object require the corresponding image on the official source page.",
         ],
     )
+
+
+def get_prompt_guide(
+    guide: GuideName, media_type: AnalysisMedia = "all"
+) -> PromptGuide:
+    """Read Google's official prompting guide for one kind of media task.
+
+    guide selects the topic: image (generate_image), video (generate_video and
+    generate_omni), speech (generate_speech), music (generate_music),
+    transcription (transcribe_audio), or analysis (analyze_media). media_type
+    narrows the analysis guide to image, audio, video, or document and is ignored
+    for other guides. Returns the full guide text in sources[].markdown, plus
+    source URLs and attribution. Local near-verbatim snapshot; no API key,
+    network request, or charges.
+    """
+    if guide == "analysis":
+        return _analysis_guide(media_type)
+    return {
+        "image": _image_guide,
+        "video": _video_guide,
+        "speech": _speech_guide,
+        "music": _music_guide,
+        "transcription": _transcription_guide,
+    }[guide]()

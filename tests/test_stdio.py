@@ -41,12 +41,7 @@ async def test_real_stdio(entrypoint, mode):
             "generate_text",
             "list_models",
             "list_media_models",
-            "get_image_prompt_guide",
-            "get_video_prompt_guide",
-            "get_speech_prompt_guide",
-            "get_music_prompt_guide",
-            "get_transcription_guide",
-            "get_media_analysis_guide",
+            "get_prompt_guide",
             "generate_image",
             "generate_video",
             "generate_omni",
@@ -90,7 +85,7 @@ async def test_real_stdio(entrypoint, mode):
             with pytest.raises(ToolError, match="Set GEMINI_API_KEY or GOOGLE_API_KEY"):
                 await client.call_tool(tool, arguments)
         assert (await client.call_tool("list_media_models")).data["verified_on"]
-        music_guide = await client.call_tool("get_music_prompt_guide")
+        music_guide = await client.call_tool("get_prompt_guide", {"guide": "music"})
         assert music_guide.structured_content["sources"][0]["url"].endswith(
             "/lyria-prompt-guide"
         )
@@ -99,7 +94,7 @@ async def test_real_stdio(entrypoint, mode):
             in (music_guide.structured_content["sources"][0]["markdown"])
         )
         analysis = await client.call_tool(
-            "get_media_analysis_guide", {"media_type": "document"}
+            "get_prompt_guide", {"guide": "analysis", "media_type": "document"}
         )
         assert len(analysis.structured_content["sources"]) == 2
         assert (await client.call_tool("ping")).data["status"] == "ok"

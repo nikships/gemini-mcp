@@ -12,14 +12,7 @@ from fastmcp.exceptions import ToolError
 from gemini_mcp import guides, server
 from gemini_mcp.catalog import list_media_models
 
-GUIDE_TOOLS = (
-    guides.get_image_prompt_guide,
-    guides.get_video_prompt_guide,
-    guides.get_speech_prompt_guide,
-    guides.get_music_prompt_guide,
-    guides.get_transcription_guide,
-    guides.get_media_analysis_guide,
-)
+GUIDE_NAMES = ("image", "video", "speech", "music", "transcription", "analysis")
 RESOURCES = files("gemini_mcp").joinpath("data", "guides")
 MANIFEST = json.loads(RESOURCES.joinpath("sources.json").read_text(encoding="utf-8"))
 
@@ -35,12 +28,12 @@ def offline(monkeypatch):
     return blocked
 
 
-@pytest.mark.parametrize("tool", GUIDE_TOOLS, ids=lambda tool: tool.__name__)
+@pytest.mark.parametrize("name", GUIDE_NAMES)
 def test_guides_are_offline_attributed_and_current(
-    tool, offline, tmp_path, monkeypatch
+    name, offline, tmp_path, monkeypatch
 ):
     monkeypatch.chdir(tmp_path)
-    result = tool()
+    result = guides.get_prompt_guide(name)
     assert result.retrieved_on == "2026-10-03"
     assert result.license == "CC-BY-4.0"
     assert result.license_url == "https://creativecommons.org/licenses/by/4.0/"
@@ -181,25 +174,25 @@ def test_official_examples_and_sections_preserved(name, phrases):
 
 
 def test_separate_api_scope_and_mcp_notes():
-    music = guides.get_music_prompt_guide()
+    music = guides.get_prompt_guide("music")
     assert "## Prompting Lyria RealTime" not in music.sources[0].markdown
     assert "WeightedPrompt" not in music.sources[0].markdown
     assert "`none " not in music.sources[0].markdown
     assert any("RealTime" in note for note in music.mcp_notes)
-    speech = guides.get_speech_prompt_guide()
+    speech = guides.get_prompt_guide("speech")
     assert any(
         "does not create, clone, or search voices" in n for n in speech.mcp_notes
     )
-    transcription = guides.get_transcription_guide()
+    transcription = guides.get_prompt_guide("transcription")
     assert any("no prompt argument" in n for n in transcription.mcp_notes)
-    analysis = guides.get_media_analysis_guide()
+    analysis = guides.get_prompt_guide("analysis")
     assert len(analysis.sources) == 5
     assert any("documentation difference" in n for n in analysis.mcp_notes)
 
 
 @pytest.mark.parametrize("media_type", ["image", "audio", "video", "document"])
 def test_analysis_modality_selection(media_type):
-    guide = guides.get_media_analysis_guide(media_type)
+    guide = guides.get_prompt_guide("analysis", media_type)
     assert len(guide.sources) == 2
     assert guide.sources[0].url.endswith("/files")
     assert guide.sources[1].url.endswith(
@@ -213,29 +206,39 @@ def test_analysis_modality_selection(media_type):
 
 
 def test_results_do_not_share_mutable_state():
-    guide = guides.get_music_prompt_guide()
+    guide = guides.get_prompt_guide("music")
     guide.sources[0].markdown = "changed"
     guide.sources.clear()
     guide.models.clear()
-    assert len(guides.get_music_prompt_guide().sources) == 2
-    assert guides.get_music_prompt_guide().models
+    assert len(guides.get_prompt_guide("music").sources) == 2
+    assert guides.get_prompt_guide("music").models
 
 
-@pytest.mark.parametrize("tool", GUIDE_TOOLS, ids=lambda tool: tool.__name__)
-async def test_mcp_guide_schema_annotations_and_result(tool, offline):
+async def test_mcp_guide_schema_annotations_and_result(offline):
     async with Client(server.create_server()) as client:
         tools = await client.list_tools()
-        discovered = next(item for item in tools if item.name == tool.__name__)
+        names = {item.name for item in tools}
+        assert "get_prompt_guide" in names
+        assert not {n for n in names if n.endswith(("_prompt_guide", "_guide"))} - {
+            "get_prompt_guide"
+        }
+        discovered = next(item for item in tools if item.name == "get_prompt_guide")
         assert discovered.annotations.read_only_hint is True
         assert discovered.annotations.destructive_hint is False
         assert discovered.annotations.idempotent_hint is True
         assert discovered.annotations.open_world_hint is False
-        assert not discovered.input_schema.get("required")
+        assert discovered.input_schema["required"] == ["guide"]
+        assert set(discovered.input_schema["properties"]["guide"]["enum"]) == set(
+            GUIDE_NAMES
+        )
         assert {"sources", "attribution", "mcp_notes", "retrieved_on"} <= set(
             discovered.output_schema["properties"]
         )
-        result = await client.call_tool(tool.__name__)
-        assert result.structured_content == tool().model_dump()
+        for name in GUIDE_NAMES:
+            result = await client.call_tool("get_prompt_guide", {"guide": name})
+            assert result.structured_content == (
+                guides.get_prompt_guide(name).model_dump()
+            )
     offline.assert_not_called()
 
 
@@ -244,18 +247,27 @@ async def test_mcp_analysis_enum_and_invalid_selection():
         tool = next(
             item
             for item in await client.list_tools()
-            if item.name == "get_media_analysis_guide"
+            if item.name == "get_prompt_guide"
         )
         selection = tool.input_schema["properties"]["media_type"]
         assert selection["default"] == "all"
         assert set(selection["enum"]) == {"all", "image", "audio", "video", "document"}
+        with pytest.raises(ToolError, match="guide"):
+            await client.call_tool("get_prompt_guide", {"guide": "../other"})
         with pytest.raises(ToolError, match="media_type"):
             await client.call_tool(
-                "get_media_analysis_guide", {"media_type": "../other"}
+                "get_prompt_guide", {"guide": "analysis", "media_type": "../other"}
             )
         result = await client.call_tool(
-            "get_media_analysis_guide", {"media_type": "audio"}
+            "get_prompt_guide", {"guide": "analysis", "media_type": "audio"}
         )
         assert result.structured_content == (
-            guides.get_media_analysis_guide("audio").model_dump()
+            guides.get_prompt_guide("analysis", "audio").model_dump()
         )
+
+
+def test_media_type_is_ignored_for_other_guides():
+    assert (
+        guides.get_prompt_guide("music", "audio").model_dump()
+        == guides.get_prompt_guide("music").model_dump()
+    )

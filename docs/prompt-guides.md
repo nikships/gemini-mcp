@@ -8,17 +8,19 @@ network access, or the repository's working directory.
 
 ## Tools and sources
 
-| Guide tool | Official source and included guidance |
+| `guide` value | Official source and included guidance |
 | --- | --- |
-| `get_image_prompt_guide` | [Nano Banana image generation](https://ai.google.dev/gemini-api/docs/image-generation), the full prompting-strategies section: generation/editing templates, sample prompts, and best practices |
-| `get_video_prompt_guide` | [Omni](https://ai.google.dev/gemini-api/docs/omni), the full Omni prompt guide: continuous shots, negatives, edits, audio, timing, text, extension, and media-role tags |
-| `get_speech_prompt_guide` | [Speech generation](https://ai.google.dev/gemini-api/docs/speech-generation), the full prompting guide: verbatim transcripts, styles, pauses, prosody, vocal tags, overlaps, consistency, and workflows |
-| `get_music_prompt_guide` | [Lyria prompt guide](https://ai.google.dev/gemini-api/docs/lyria-prompt-guide), all batch/shared prompting sections and Lyria 3.5 examples; [Music generation](https://ai.google.dev/gemini-api/docs/music-generation), best practices |
-| `get_transcription_guide` | [Transcription](https://ai.google.dev/gemini-api/docs/transcribe), overview, language hints, vocabulary, diarization, timestamps, modes, and best practices |
-| `get_media_analysis_guide` | [Files](https://ai.google.dev/gemini-api/docs/files#prompt-guide), the full file-prompting strategies section, plus modality-specific sources below |
+| `image` | [Nano Banana image generation](https://ai.google.dev/gemini-api/docs/image-generation), the full prompting-strategies section: generation/editing templates, sample prompts, and best practices |
+| `video` | [Omni](https://ai.google.dev/gemini-api/docs/omni), the full Omni prompt guide: continuous shots, negatives, edits, audio, timing, text, extension, and media-role tags |
+| `speech` | [Speech generation](https://ai.google.dev/gemini-api/docs/speech-generation), the full prompting guide: verbatim transcripts, styles, pauses, prosody, vocal tags, overlaps, consistency, and workflows |
+| `music` | [Lyria prompt guide](https://ai.google.dev/gemini-api/docs/lyria-prompt-guide), all batch/shared prompting sections and Lyria 3.5 examples; [Music generation](https://ai.google.dev/gemini-api/docs/music-generation), best practices |
+| `transcription` | [Transcription](https://ai.google.dev/gemini-api/docs/transcribe), overview, language hints, vocabulary, diarization, timestamps, modes, and best practices |
+| `analysis` | [Files](https://ai.google.dev/gemini-api/docs/files#prompt-guide), the full file-prompting strategies section, plus modality-specific sources below |
 
-`get_media_analysis_guide` accepts `media_type: "all"` (default), `"image"`,
-`"audio"`, `"video"`, or `"document"`. General Files guidance is always included.
+All guides are served by the single `get_prompt_guide` tool, which takes a
+required `guide` argument. With `guide: "analysis"`, an optional `media_type` of
+`"all"` (default), `"image"`, `"audio"`, `"video"`, or `"document"` selects the
+modality sources; it is ignored for other guides. General Files guidance is always included.
 Selected modality-specific sources:
 
 - [Image understanding](https://ai.google.dev/gemini-api/docs/image-understanding):
