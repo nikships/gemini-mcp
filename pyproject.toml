@@ -1,6 +1,6 @@
 [project]
 name = "aio-gemini-mcp"
-version = "0.1.1"
+version = "0.1.2"
 description = "A stdio FastMCP server for Google's Gemini API"
 readme = "README.md"
 authors = [

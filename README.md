@@ -227,11 +227,15 @@ Base64 is omitted from MCP results by default to avoid filling model context.
 Set `include_inline_data: true` if you also need it. Local output paths refer to
 the server machine, not necessarily the MCP client's machine.
 
-Omni defaults to `delivery: "uri"` for large videos. These outputs have `uri`
-and, for recognized Google Files URIs, `file_name`. Poll `get_file` until ACTIVE,
-then call `download_file` with that `file_name` to stream it to disk. Downloads
-accept Google resource names only, not arbitrary URLs. Alternatively request
-`delivery: "inline"` to save bytes immediately. Google's current Omni docs note
+Omni delivery follows `store`. With the default `store: false`, delivery is
+`"inline"` and the video is saved to a local file. With `store: true`, delivery
+defaults to `"uri"`, which suits large videos. Google rejects URI delivery
+without storage, so an explicit `delivery: "uri"` with `store: false` returns an
+error. URI outputs have `uri` and, for recognized Google Files URIs, `file_name`.
+Poll `get_file` until ACTIVE, then call `download_file` with that `file_name` to
+stream it to disk. Downloads accept Google resource names only, not arbitrary
+URLs. You can also pass `delivery: "inline"` with `store: true` to save bytes
+immediately. Google's current Omni docs note
 that `get_interaction` can return inline data even when creation used URI delivery.
 
 ### Image generation or editing

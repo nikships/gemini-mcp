@@ -281,7 +281,7 @@ async def generate_omni(
     resolution: VideoResolution = "720p",
     duration_seconds: Annotated[int | None, Field(ge=3, le=10)] = None,
     task: VideoTask | None = None,
-    delivery: Delivery = "uri",
+    delivery: Delivery | None = None,
     previous_interaction_id: NonBlank | None = None,
     store: bool = False,
     background: bool = False,
@@ -293,10 +293,15 @@ async def generate_omni(
 
     Two ordered images can be first/last frames when described in the prompt.
     Prefer prompt-based edits and extension; task applies strict constraints.
-    URI delivery returns Google file URIs instead of inline bytes.
+    Delivery defaults to inline (saved to a local file) when store=false and to
+    uri (Google file URIs) when store=true; uri delivery requires store=true.
     Set store=true for multi-turn editing; background also requires store=true.
     """
     _not_blank(prompt, "prompt")
+    if delivery is None:
+        delivery = "uri" if store else "inline"
+    elif delivery == "uri" and not store:
+        raise ToolError("delivery=uri requires store=true.")
     contents = await media_contents(media, allowed={"image", "audio", "video"})
     if task in {"edit", "extend"} and not (
         previous_interaction_id or any(item["type"] == "video" for item in contents)
@@ -338,7 +343,7 @@ async def generate_video(
     resolution: VideoResolution = "720p",
     duration_seconds: Annotated[int | None, Field(ge=3, le=10)] = None,
     task: VideoTask | None = None,
-    delivery: Delivery = "uri",
+    delivery: Delivery | None = None,
     previous_interaction_id: NonBlank | None = None,
     store: bool = False,
     background: bool = False,

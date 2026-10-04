@@ -65,6 +65,9 @@ not legacy examples. No automatic fallback is configured.
   reach 40 seconds. Extending uploaded videos is currently unavailable in the
   EEA, Switzerland, and UK. Uploaded spoken dialogue cannot be extended with
   more speech; generated-video multi-turn speech extension is supported.
+- Omni URI delivery requires `store=true` (Google returns HTTP 400 otherwise),
+  so the server defaults delivery to inline when `store=false` and to URI when
+  `store=true`, rather than opting the caller into storage.
 - Omni URI delivery is recommended for videos over 4 MB. Poll the corresponding
   Files resource until ACTIVE before downloading. The guide warns that GET
   interaction responses currently return inline data even when creation used

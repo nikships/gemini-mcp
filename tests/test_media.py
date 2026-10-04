@@ -176,6 +176,27 @@ async def test_omni_real_sdk_all_modalities_and_uri(api, tool):
     assert result.outputs[0].path is None
 
 
+@pytest.mark.parametrize("tool", [server.generate_video, server.generate_omni])
+@pytest.mark.parametrize(
+    ("store", "delivery", "expected"),
+    [(False, None, "inline"), (True, None, "uri"), (False, "inline", "inline")],
+)
+async def test_omni_delivery_follows_store(api, tool, store, delivery, expected):
+    requests = api(interaction({"type": "text", "text": "ok"}))
+    await tool("A scene", store=store, delivery=delivery)
+    body = request_body(requests)
+    assert body["store"] is store
+    assert body["response_format"]["delivery"] == expected
+
+
+@pytest.mark.parametrize("tool", [server.generate_video, server.generate_omni])
+async def test_omni_uri_delivery_requires_store(api, tool):
+    requests = api(interaction({"type": "text", "text": "ok"}))
+    with pytest.raises(ToolError, match="delivery=uri requires store=true"):
+        await tool("A scene", delivery="uri")
+    assert not requests
+
+
 async def test_transcribe_real_sdk_annotations(api):
     annotation = {
         "type": "word_info",
