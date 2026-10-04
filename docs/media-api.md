@@ -106,7 +106,7 @@ those APIs as Interactions tools. Existing custom voices can be used by TTS.
 
 1. Retrieve the current model catalog and relevant guides via Developer Knowledge.
 2. Verify exact model IDs, Interactions support, and per-model limits.
-3. Update `src/gemini_mcp/catalog.py`, input validation, this file, and README.
+3. Update `src/aio_gemini/catalog.py`, input validation, this file, and README.
 4. Add real-SDK mock-transport tests for changed request/response fields.
 5. Run Ruff, the full test suite (including stdio), and the package build.
    Live account access is a separate opt-in check and can incur charges.

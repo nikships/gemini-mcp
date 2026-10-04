@@ -15,7 +15,7 @@ from google.genai import errors, types
 from google.genai._gaos.lib import compat_errors as interaction_errors
 from pydantic import BaseModel, Field
 
-from gemini_mcp.catalog import (
+from aio_gemini.catalog import (
     DEFAULT_IMAGE_MODEL,
     DEFAULT_MODEL,
     DEFAULT_MUSIC_MODEL,
@@ -29,8 +29,8 @@ from gemini_mcp.catalog import (
     TranscribeModel,
     list_media_models,
 )
-from gemini_mcp.guides import get_prompt_guide
-from gemini_mcp.media import (
+from aio_gemini.guides import get_prompt_guide
+from aio_gemini.media import (
     Delivery,
     ImageAspectRatio,
     MediaInput,
@@ -47,7 +47,7 @@ from gemini_mcp.media import (
     media_output_file,
     media_result,
 )
-from gemini_mcp.media import (
+from aio_gemini.media import (
     output_directory as resolve_output_directory,
 )
 

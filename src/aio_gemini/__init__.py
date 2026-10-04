@@ -1,5 +1,5 @@
 """Google Gen AI tools served over MCP stdio."""
 
-from gemini_mcp.server import main
+from aio_gemini.server import main
 
 __all__ = ["main"]

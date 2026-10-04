@@ -11,7 +11,7 @@ from fastmcp.exceptions import ToolError
 from google.genai import interactions
 from pydantic import ValidationError
 
-from gemini_mcp import catalog, media, server
+from aio_gemini import catalog, media, server
 
 
 def encoded(value: bytes) -> str:

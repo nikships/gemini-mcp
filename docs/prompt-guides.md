@@ -105,7 +105,7 @@ media assets.
 
    The script performs no network requests. It selects headings, applies only
    the documented transformations, and writes the packaged Markdown and
-   `src/gemini_mcp/data/guides/sources.json`. Missing headings or prompt samples
+   `src/aio_gemini/data/guides/sources.json`. Missing headings or prompt samples
    fail before writing snapshots. Review changed source text, not only hashes.
 4. Review all excerpts and scope notes. Update extraction boundaries if Google's
    headings change, and keep provenance/modification metadata accurate.

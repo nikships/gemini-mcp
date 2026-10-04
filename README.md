@@ -5,6 +5,32 @@ the **Google Interactions API** for generation, not `models.generate_content`.
 No HTTP server or listening port is started. Stdout is reserved for MCP messages;
 diagnostics go to stderr.
 
+## MCP configuration
+
+Add this to your MCP client's `mcpServers` configuration (also available as
+[`mcp-config.example.json`](mcp-config.example.json)). It needs only `uv`; `uvx`
+fetches and runs the server from [PyPI](https://pypi.org/project/aio-gemini-mcp/):
+
+```json
+{
+  "mcpServers": {
+    "gemini": {
+      "command": "uvx",
+      "args": [
+        "aio-gemini-mcp@latest"
+      ],
+      "env": {
+        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY"
+      }
+    }
+  }
+}
+```
+
+Optional `env` entries: `GEMINI_MODEL` (default text model, `gemini-3.8-flash`)
+and `GEMINI_OUTPUT_DIR` (absolute path for saved media). Client configuration
+formats can vary.
+
 ## Setup
 
 This machine already has uv and Python installed. For a fresh checkout:
@@ -34,17 +60,13 @@ Supply your Gemini Developer API key through the MCP client's environment.
 project. `.env` files are **not** automatically loaded.
 
 ```sh
-uv --directory /home/factory-user/gemini-mcp run --frozen gemini-mcp
+uv --directory /home/factory-user/gemini-mcp run --frozen aio-gemini-mcp
 ```
 
-Also supported: `uv run python -m gemini_mcp` from the project directory.
+Also supported: `uv run python -m aio_gemini` from the project directory.
 The server waits for MCP messages on stdin; it is not an interactive terminal app.
-An MCP client should launch it as a subprocess.
-
-Copy the `gemini` entry from `mcp-config.example.json` into your client's
-`mcpServers` configuration. Replace the example key locally or use your client's
-secret/environment mechanism. Do not commit credentials. Adapt the absolute
-paths if you move the project. Client configuration formats can vary.
+An MCP client should launch it as a subprocess, as in the
+[MCP configuration](#mcp-configuration) above.
 
 ## Tools
 

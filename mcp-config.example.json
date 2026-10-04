@@ -1,18 +1,12 @@
 {
   "mcpServers": {
     "gemini": {
-      "command": "/home/factory-user/.local/bin/uv",
+      "command": "uvx",
       "args": [
-        "--directory",
-        "/home/factory-user/gemini-mcp",
-        "run",
-        "--frozen",
-        "gemini-mcp"
+        "aio-gemini-mcp@latest"
       ],
       "env": {
-        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY",
-        "GEMINI_MODEL": "gemini-3.8-flash",
-        "GEMINI_OUTPUT_DIR": "/home/factory-user/gemini-mcp/generated-media"
+        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY"
       }
     }
   }

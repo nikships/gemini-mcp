@@ -8,7 +8,7 @@ from fastmcp import Client
 from fastmcp.exceptions import ToolError
 from google.genai import errors, interactions, types
 
-from gemini_mcp import server
+from aio_gemini import server
 
 
 @pytest.fixture(autouse=True)

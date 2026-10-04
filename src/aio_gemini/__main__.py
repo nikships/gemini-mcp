@@ -1,4 +1,4 @@
-from gemini_mcp.server import main
+from aio_gemini.server import main
 
 if __name__ == "__main__":
     main()

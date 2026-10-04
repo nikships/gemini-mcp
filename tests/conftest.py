@@ -2,7 +2,7 @@ import httpx
 import pytest
 from google import genai
 
-from gemini_mcp import server
+from aio_gemini import server
 
 
 @pytest.fixture(autouse=True)

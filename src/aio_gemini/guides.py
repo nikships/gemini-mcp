@@ -6,7 +6,7 @@ from typing import Literal, get_args
 
 from pydantic import BaseModel
 
-from gemini_mcp.catalog import (
+from aio_gemini.catalog import (
     DEFAULT_MODEL,
     ImageModel,
     MusicModel,
@@ -50,7 +50,7 @@ def _guide(
     source_names: list[str],
     notes: list[str],
 ) -> PromptGuide:
-    resources = files("gemini_mcp").joinpath("data", "guides")
+    resources = files("aio_gemini").joinpath("data", "guides")
     manifest = json.loads(
         resources.joinpath("sources.json").read_text(encoding="utf-8")
     )

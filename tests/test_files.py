@@ -5,7 +5,7 @@ import httpx
 import pytest
 from fastmcp.exceptions import ToolError
 
-from gemini_mcp import server
+from aio_gemini import server
 
 
 def file_info(name="files/generated", state="ACTIVE", generated=True):

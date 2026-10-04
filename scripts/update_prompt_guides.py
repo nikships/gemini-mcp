@@ -10,7 +10,7 @@ import re
 import sys
 from pathlib import Path
 
-OUTPUT = Path(__file__).resolve().parents[1] / "src/gemini_mcp/data/guides"
+OUTPUT = Path(__file__).resolve().parents[1] / "src/aio_gemini/data/guides"
 LANGUAGES = r"Python|JavaScript|Java|Go|REST"
 
 

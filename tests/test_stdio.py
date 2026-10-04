@@ -15,10 +15,10 @@ ROOT = Path(__file__).resolve().parents[1]
 async def test_real_stdio(entrypoint, mode):
     if entrypoint == "uv":
         command = shutil.which("uv") or str(Path.home() / ".local/bin/uv")
-        args = ["--directory", str(ROOT), "run", "--frozen", "gemini-mcp"]
+        args = ["--directory", str(ROOT), "run", "--frozen", "aio-gemini-mcp"]
     else:
         command = sys.executable
-        args = ["-m", "gemini_mcp"]
+        args = ["-m", "aio_gemini"]
 
     transport = StdioTransport(
         command=command,

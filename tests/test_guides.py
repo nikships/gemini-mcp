@@ -9,11 +9,11 @@ import pytest
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
 
-from gemini_mcp import guides, server
-from gemini_mcp.catalog import list_media_models
+from aio_gemini import guides, server
+from aio_gemini.catalog import list_media_models
 
 GUIDE_NAMES = ("image", "video", "speech", "music", "transcription", "analysis")
-RESOURCES = files("gemini_mcp").joinpath("data", "guides")
+RESOURCES = files("aio_gemini").joinpath("data", "guides")
 MANIFEST = json.loads(RESOURCES.joinpath("sources.json").read_text(encoding="utf-8"))
 
 

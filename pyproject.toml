@@ -1,5 +1,5 @@
 [project]
-name = "gemini-mcp"
+name = "aio-gemini-mcp"
 version = "0.1.0"
 description = "A stdio FastMCP server for Google's Gemini API"
 readme = "README.md"
@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-gemini-mcp = "gemini_mcp:main"
+aio-gemini-mcp = "aio_gemini:main"
 
 [build-system]
 requires = ["uv_build>=0.12.22,<0.13.0"]
@@ -37,3 +37,6 @@ target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC"]
+
+[tool.uv.build-backend]
+module-name = "aio_gemini"

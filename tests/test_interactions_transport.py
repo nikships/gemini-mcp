@@ -6,7 +6,7 @@ import httpx
 import pytest
 from fastmcp.exceptions import ToolError
 
-from gemini_mcp import server
+from aio_gemini import server
 
 
 async def test_real_sdk_posts_interactions(sdk_transport):
