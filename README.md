@@ -72,7 +72,6 @@ An MCP client should launch it as a subprocess, as in the
 
 | Tool | Purpose |
 | --- | --- |
-| `ping` | Local health check and current default model; no API key needed |
 | `generate_text` | Create a Gemini interaction and return its ID, status, and text |
 | `list_models` | List models available to your Google API key |
 | `list_media_models` | Current documented media defaults and supported model choices; no key needed |
@@ -118,7 +117,7 @@ upload, and download default to 600 seconds, configurable with `timeout_seconds`
 (1–1800). Google requests use asynchronous I/O. Clients
 are closed after each tool call. Upstream error details are redacted from tool
 errors. Prompts are sent to Google and API use may incur charges. Missing keys
-do not prevent startup, tool discovery, or health checks.
+do not prevent startup or tool discovery.
 
 ## Official prompting guides
 

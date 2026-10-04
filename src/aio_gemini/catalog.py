@@ -22,8 +22,8 @@ MusicModel = Literal["lyria-3.5", "lyria-3-clip-preview"]
 def list_media_models() -> dict[str, object]:
     """Return the documented current model catalog, without an API request.
 
-    This is a dated documentation snapshot, not account-specific availability.
-    No legacy model is used as a fallback. Use list_models for account access.
+    A dated documentation snapshot, not account availability; use list_models
+    for that.
     """
     return {
         "verified_on": DOCS_VERIFIED_ON,

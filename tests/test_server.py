@@ -58,18 +58,11 @@ def google(monkeypatch):
     )
 
 
-def test_ping_without_credentials():
-    assert server.ping() == {
-        "status": "ok",
-        "default_model": server.DEFAULT_MODEL,
-    }
-
-
 def test_model_environment(monkeypatch):
     monkeypatch.setenv("GEMINI_MODEL", " custom-model ")
-    assert server.ping()["default_model"] == "custom-model"
+    assert server._default_model() == "custom-model"
     monkeypatch.setenv("GEMINI_MODEL", " ")
-    assert server.ping()["default_model"] == server.DEFAULT_MODEL
+    assert server._default_model() == server.DEFAULT_MODEL
 
 
 async def test_generate_text_and_cleanup(google):
@@ -215,7 +208,7 @@ async def test_list_models(google):
 async def test_mcp_discovery_and_generation(google):
     async with Client(server.create_server()) as client:
         tools = await client.list_tools()
-        assert {"ping", "generate_text", "list_models"} <= {tool.name for tool in tools}
+        assert {"generate_text", "list_models"} <= {tool.name for tool in tools}
         result = await client.call_tool("generate_text", {"prompt": "Hi"})
         assert result.structured_content == {
             "id": "interaction-123",
@@ -274,3 +267,9 @@ async def test_mcp_input_validation(google, arguments):
         with pytest.raises(ToolError):
             await client.call_tool("generate_text", arguments)
     google.interactions.create.assert_not_awaited()
+
+
+def test_instructions_require_reading_prompt_guides():
+    instructions = server.create_server().instructions
+    assert "REQUIRED" in instructions
+    assert "get_prompt_guide" in instructions

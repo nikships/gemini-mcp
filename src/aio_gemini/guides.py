@@ -211,15 +211,11 @@ def _analysis_guide(media_type: AnalysisMedia) -> PromptGuide:
 def get_prompt_guide(
     guide: GuideName, media_type: AnalysisMedia = "all"
 ) -> PromptGuide:
-    """Read Google's official prompting guide for one kind of media task.
+    """Read Google's official prompting guide for a media task.
 
-    guide selects the topic: image (generate_image), video (generate_video and
-    generate_omni), speech (generate_speech), music (generate_music),
-    transcription (transcribe_audio), or analysis (analyze_media). media_type
-    narrows the analysis guide to image, audio, video, or document and is ignored
-    for other guides. Returns the full guide text in sources[].markdown, plus
-    source URLs and attribution. Local near-verbatim snapshot; no API key,
-    network request, or charges.
+    media_type narrows the analysis guide and is ignored for other guides.
+    Returns the full guide text in sources[].markdown, plus source URLs and
+    attribution. Offline near-verbatim snapshot; needs no API key.
     """
     if guide == "analysis":
         return _analysis_guide(media_type)

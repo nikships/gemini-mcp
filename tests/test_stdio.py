@@ -31,13 +31,11 @@ async def test_real_stdio(entrypoint, mode):
         },
     )
     async with Client(transport, timeout=10, init_timeout=20, mode=mode) as client:
-        # Protocol-level ping exists only in handshake-era MCP. The ping tool
-        # below is available in both current and legacy protocols.
+        # Protocol-level ping exists only in handshake-era MCP.
         if mode == "legacy":
             await client.ping()
         tools = await client.list_tools()
         assert {
-            "ping",
             "generate_text",
             "list_models",
             "list_media_models",
@@ -70,8 +68,6 @@ async def test_real_stdio(entrypoint, mode):
         assert {"id", "status", "text", "outputs"} <= set(
             image.output_schema["properties"]
         )
-        result = await client.call_tool("ping")
-        assert result.data == {"status": "ok", "default_model": "stdio-test-model"}
         with pytest.raises(ToolError, match="Set GEMINI_API_KEY or GOOGLE_API_KEY"):
             await client.call_tool("generate_text", {"prompt": "Hello"})
         with pytest.raises(ToolError, match="Set GEMINI_API_KEY or GOOGLE_API_KEY"):
@@ -97,4 +93,3 @@ async def test_real_stdio(entrypoint, mode):
             "get_prompt_guide", {"guide": "analysis", "media_type": "document"}
         )
         assert len(analysis.structured_content["sources"]) == 2
-        assert (await client.call_tool("ping")).data["status"] == "ok"

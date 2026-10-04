@@ -394,11 +394,11 @@ async def test_get_cancel_delete_interactions_real_sdk(sdk_transport, tmp_path):
                 steps=[
                     {
                         "type": "user_input",
-                        "content": [{"type": "text", "text": "private-input"}],
+                        "content": [{"type": "text", "text": "hidden-input"}],
                     },
                     {
                         "type": "thought",
-                        "summary": [{"type": "text", "text": "private-thought"}],
+                        "summary": [{"type": "text", "text": "hidden-thought"}],
                     },
                     {
                         "type": "model_output",
@@ -418,7 +418,7 @@ async def test_get_cancel_delete_interactions_real_sdk(sdk_transport, tmp_path):
     sdk_transport(handle)
     result = await server.get_interaction("stored-id", output_directory=str(tmp_path))
     assert result.text == "Result"
-    assert "private" not in result.model_dump_json()
+    assert "hidden-" not in result.model_dump_json()
     assert await asyncio.to_thread(Path(result.outputs[0].path).read_bytes) == b"video"
     assert (await server.cancel_interaction("stored-id")).status == "cancelled"
     assert await server.delete_interaction("stored-id") == {

@@ -116,24 +116,19 @@ async def _google_client(
         ) from None
 
 
-def ping() -> dict[str, str]:
-    """Check server health without contacting Google or requiring an API key."""
-    return {"status": "ok", "default_model": _default_model()}
-
-
 async def generate_text(
-    prompt: Annotated[str, Field(min_length=1, description="Text to send to Gemini")],
+    prompt: Annotated[str, Field(min_length=1)],
     model: Annotated[str | None, Field(min_length=1)] = None,
     system_instruction: str | None = None,
     max_output_tokens: Annotated[int, Field(ge=1, le=65_536)] = 4096,
     previous_interaction_id: Annotated[str | None, Field(min_length=1)] = None,
     store: bool = False,
 ) -> InteractionResult:
-    """Generate text through Google's Interactions API; may incur charges.
+    """Generate text with Gemini.
 
-    Uses GEMINI_MODEL (or the server default) unless model is supplied.
-    Returns id, status, and text. Set store=True to save this interaction with
-    Google for retrieval or continuation using previous_interaction_id.
+    Uses GEMINI_MODEL (or the server default) unless model is supplied. Set
+    store=True to save this interaction with Google for retrieval or
+    continuation using previous_interaction_id.
     """
     if not prompt.strip():
         raise ToolError("prompt must not be blank.")
@@ -168,7 +163,7 @@ async def generate_text(
 
 
 async def list_models() -> list[dict[str, str]]:
-    """List models available to the configured Google API key."""
+    """List models available to your API key."""
     async with _google_client() as client:
         pager = await client.models.list()
         return [
@@ -243,11 +238,10 @@ async def generate_image(
     output_directory: NonBlank | None = None,
     include_inline_data: bool = False,
 ) -> MediaResult:
-    """Generate or edit images through Interactions; may incur charges.
+    """Generate or edit images with Nano Banana.
 
     Supply reference images, videos, or PDFs, or continue a stored interaction.
-    Inline outputs are saved locally. Current Nano Banana models only, no
-    fallback. Lite supports only 1K and no Google Search.
+    Lite supports only 1K and no Google Search.
     """
     _not_blank(prompt, "prompt")
     if model == "gemini-3.1-flash-lite-image":
@@ -295,12 +289,11 @@ async def generate_omni(
     output_directory: NonBlank | None = None,
     include_inline_data: bool = False,
 ) -> MediaResult:
-    """Generate, edit, interpolate, or extend video with Omni via Interactions.
+    """Generate, edit, interpolate, or extend video with Omni.
 
-    Accepts text with image/audio/video references. Two ordered images can be
-    first/last frames when described in the prompt. Prefer prompt-based edits
-    and extension; task applies strict constraints. Video includes native audio.
-    URI delivery avoids large response payloads; returned URIs are not fetched.
+    Two ordered images can be first/last frames when described in the prompt.
+    Prefer prompt-based edits and extension; task applies strict constraints.
+    URI delivery returns Google file URIs instead of inline bytes.
     Set store=true for multi-turn editing; background also requires store=true.
     """
     _not_blank(prompt, "prompt")
@@ -353,10 +346,7 @@ async def generate_video(
     output_directory: NonBlank | None = None,
     include_inline_data: bool = False,
 ) -> MediaResult:
-    """Generate video through Interactions using Omni, not the separate Veo API.
-
-    Same controls and editing support as generate_omni, including native audio.
-    """
+    """Generate video with Omni. Alias for generate_omni."""
     return await generate_omni(
         prompt=prompt,
         media=media,
@@ -387,12 +377,12 @@ async def transcribe_audio(
     background: bool = False,
     timeout_seconds: Timeout = 600,
 ) -> MediaResult:
-    """Transcribe audio with the current dedicated Interactions ASR model.
+    """Transcribe audio.
 
     Returns text and ordered blocks containing word_info annotations. Smart
     mode cannot use diarization/timestamps; vocabulary cannot use either.
     Language detection is automatic when language_codes is omitted or empty.
-    Upload long recordings first. Live transcription is a separate API.
+    Upload long recordings first.
     """
     if mode == "smart" and (diarization or word_timestamps):
         raise ToolError(
@@ -441,12 +431,11 @@ async def generate_speech(
     output_directory: NonBlank | None = None,
     include_inline_data: bool = False,
 ) -> MediaResult:
-    """Generate single- or two-speaker TTS through Interactions.
+    """Generate single- or two-speaker TTS.
 
     Supply text OR structured turns. Text is spoken verbatim, so put delivery
     instructions in style, not text. Multi-speaker turns must name a configured
-    speaker. Accepts prebuilt/custom voice IDs; does not create or clone voices.
-    Unary WAV is saved as returned, with no extra PCM/WAV header conversion.
+    speaker. Accepts prebuilt or existing custom voice IDs.
     """
     if (text is None) == (turns is None):
         raise ToolError("Provide exactly one of text or turns.")
@@ -519,12 +508,10 @@ async def generate_music(
     output_directory: NonBlank | None = None,
     include_inline_data: bool = False,
 ) -> MediaResult:
-    """Generate music with Lyria through Interactions; may incur charges.
+    """Generate music with Lyria.
 
-    Lyria 3.5 creates full songs; Clip is the current short-clip specialist.
-    Prompt for duration, BPM, structure, instrumental-only music, or lyrics.
-    Up to ten images can inspire music. Returns all lyrics/text and audio blocks.
-    MP3 is default; WAV is supported only by Lyria 3.5. Not Lyria RealTime.
+    Lyria 3.5 creates full songs; Clip is the short-clip specialist. Up to ten
+    images can inspire music. MP3 is default; WAV is supported only by Lyria 3.5.
     """
     _not_blank(prompt, "prompt")
     if model == "lyria-3-clip-preview" and mime_type != "audio/mp3":
@@ -556,10 +543,9 @@ async def analyze_media(
     background: bool = False,
     timeout_seconds: Timeout = 600,
 ) -> MediaResult:
-    """Understand images, audio, video, or PDFs with current Gemini Flash.
+    """Understand images, audio, video, or PDFs.
 
-    Uses Interactions, not generateContent. For speech recognition alone use
-    transcribe_audio. Video processing can be static or agentic.
+    For speech recognition alone use transcribe_audio.
     """
     _not_blank(prompt, "prompt")
     if not media:
@@ -586,9 +572,8 @@ async def get_interaction(
     output_directory: NonBlank | None = None,
     include_inline_data: bool = False,
 ) -> MediaResult:
-    """Retrieve/poll a stored interaction and save any inline model outputs.
+    """Retrieve or poll a stored interaction and save any inline outputs.
 
-    Only model output is returned, not the stored input or reasoning timeline.
     Repeated retrieval of inline outputs creates new unique local files.
     """
     id = _not_blank(interaction_id, "interaction_id").strip()
@@ -601,7 +586,7 @@ async def get_interaction(
 
 
 async def cancel_interaction(interaction_id: NonBlank) -> MediaResult:
-    """Cancel a running background interaction by ID; may not undo incurred costs."""
+    """Cancel a running background interaction."""
     id = _not_blank(interaction_id, "interaction_id").strip()
     async with _google_client() as client:
         response = await client.interactions.cancel(id, timeout=60)
@@ -609,7 +594,7 @@ async def cancel_interaction(interaction_id: NonBlank) -> MediaResult:
 
 
 async def delete_interaction(interaction_id: NonBlank) -> dict[str, str]:
-    """Delete an explicitly named stored Google interaction, not local outputs."""
+    """Delete a stored interaction from Google; local outputs are untouched."""
     id = _not_blank(interaction_id, "interaction_id").strip()
     async with _google_client() as client:
         await client.interactions.delete(id, timeout=60)
@@ -646,10 +631,10 @@ async def upload_file(
     display_name: NonBlank | None = None,
     timeout_seconds: Timeout = 600,
 ) -> FileResult:
-    """Upload an absolute local media path to Google Files, not for generation.
+    """Upload a local file to Google Files for reuse as media input.
 
-    Files may remain PROCESSING. Poll get_file until ACTIVE before using uri in
-    an interaction. Uploads expire after 48 hours; no automatic deletion occurs.
+    Poll get_file until ACTIVE before using the uri in an interaction. Uploads
+    expire after 48 hours.
     """
     file = await asyncio.to_thread(local_file, path)
     _not_blank(mime_type, "mime_type")
@@ -685,7 +670,7 @@ async def get_file(name: NonBlank) -> FileResult:
 async def list_files(
     limit: Annotated[int, Field(ge=1, le=1000)] = 100,
 ) -> list[FileResult]:
-    """List up to limit uploaded Google files, including their processing state."""
+    """List uploaded Google files with their processing state."""
     async with _google_client() as client:
         pager = await client.files.list(config={"page_size": min(limit, 100)})
         files = []
@@ -697,7 +682,7 @@ async def list_files(
 
 
 async def delete_file(name: NonBlank) -> dict[str, str]:
-    """Delete one explicitly named uploaded Google file; leaves local files intact."""
+    """Delete an uploaded Google file; local files are untouched."""
     name = _file_name(name)
     async with _google_client() as client:
         await client.files.delete(name=name)
@@ -709,11 +694,10 @@ async def download_file(
     output_directory: NonBlank | None = None,
     timeout_seconds: Timeout = 600,
 ) -> dict[str, str]:
-    """Download a generated Google file to a private unique local file.
+    """Download a generated Google file to a unique local file.
 
-    Use file_name from URI media output. Only ACTIVE generated Google files are
-    downloadable, not uploaded files. No arbitrary URLs are fetched. Poll
-    get_file for PROCESSING files, then retry. Streams bytes directly to disk.
+    Use file_name from URI media output. Only ACTIVE generated files are
+    downloadable, not uploaded ones. Poll get_file for PROCESSING files, then retry.
     """
     name = _file_name(name)
     directory = resolve_output_directory(output_directory)
@@ -732,13 +716,12 @@ def create_server() -> FastMCP:
     server = FastMCP(
         "Gemini",
         instructions=(
-            "Google Interactions API tools. Google requests require an API key and "
-            "may incur charges. Media tools use documented current models only, "
+            "Google Interactions API tools. REQUIRED: before your first call to any "
+            "media tool in a session, read the matching get_prompt_guide guide in "
+            "full. Do not prompt from memory. Guides are free and offline. "
+            "Media tools use documented current models only, "
             "and save inline output to local files; URI output is not downloaded. "
-            "Use list_media_models for defaults and API boundaries. "
-            "get_prompt_guide returns attributed official prompting guidance "
-            "(guide: image, video, speech, music, transcription, or analysis) "
-            "without an API key or network request. Generation "
+            "Use list_media_models for defaults and API boundaries. Generation "
             "returns id, status, text, and ordered media outputs. Set "
             "store=true to save a turn with Google, then pass its id as "
             "previous_interaction_id to continue. Background requires store=true; "
@@ -748,7 +731,6 @@ def create_server() -> FastMCP:
         ),
         mask_error_details=True,
     )
-    server.tool(ping)
     server.tool(generate_text)
     server.tool(list_models)
     for tool in (
