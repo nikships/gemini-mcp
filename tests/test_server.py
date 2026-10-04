@@ -1,4 +1,3 @@
-from collections.abc import AsyncIterator
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -6,7 +5,7 @@ import httpx
 import pytest
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
-from google.genai import errors, interactions, types
+from google.genai import interactions
 
 from aio_gemini import server
 
@@ -20,7 +19,7 @@ def clean_environment(monkeypatch):
 @pytest.fixture
 def google(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
-    models = SimpleNamespace(generate_content=AsyncMock(), list=AsyncMock())
+    models = SimpleNamespace(generate_content=AsyncMock())
     interaction_api = SimpleNamespace(
         sdk_configuration=SimpleNamespace(
             retry_config=SimpleNamespace(strategy="default")
@@ -76,7 +75,7 @@ async def test_generate_text_and_cleanup(google):
     assert kwargs["model"] == server.DEFAULT_MODEL
     assert kwargs["input"] == "Say hello"
     assert kwargs["generation_config"] == {"max_output_tokens": 4096}
-    assert kwargs["store"] is False
+    assert kwargs["store"] is True
     assert kwargs["stream"] is False
     assert kwargs["background"] is False
     assert kwargs["timeout"] == 60
@@ -99,7 +98,6 @@ async def test_generation_options(google, monkeypatch):
         system_instruction="Be brief",
         max_output_tokens=123,
         previous_interaction_id=" previous-123 ",
-        store=True,
     )
     kwargs = google.interactions.create.call_args.kwargs
     assert kwargs["model"] == "other-model"
@@ -118,11 +116,9 @@ async def test_api_key_precedence_and_fallback(google, monkeypatch):
     assert google.factory.call_args.kwargs["api_key"] == "fallback-key"
 
 
-@pytest.mark.parametrize("tool", [server.generate_text, server.list_models])
-async def test_missing_key(tool):
-    args = ("Hello",) if tool is server.generate_text else ()
+async def test_missing_key():
     with pytest.raises(ToolError, match="Set GEMINI_API_KEY or GOOGLE_API_KEY"):
-        await tool(*args)
+        await server.generate_text("Hello")
 
 
 @pytest.mark.parametrize(
@@ -158,28 +154,17 @@ async def test_incomplete_response_status(google):
     assert (await server.generate_text("Hello")).status == "incomplete"
 
 
-@pytest.mark.parametrize("operation", ["create", "list"])
-async def test_api_errors_are_redacted(google, operation):
-    if operation == "create":
-        google.interactions.create.side_effect = (
-            server.interaction_errors.APIStatusError(
-                "sensitive-upstream-detail",
-                response=httpx.Response(
-                    429,
-                    request=httpx.Request("POST", "https://example.test/interactions"),
-                ),
-                body={"sensitive": "upstream-detail"},
-            )
-        )
-    else:
-        google.models.list.side_effect = errors.APIError(
-            429, {"error": {"message": "sensitive-upstream-detail", "status": "ERROR"}}
-        )
+async def test_api_errors_are_redacted(google):
+    google.interactions.create.side_effect = server.interaction_errors.APIStatusError(
+        "sensitive-upstream-detail",
+        response=httpx.Response(
+            429,
+            request=httpx.Request("POST", "https://example.test/interactions"),
+        ),
+        body={"sensitive": "upstream-detail"},
+    )
     with pytest.raises(ToolError, match="HTTP 429") as exc:
-        if operation == "create":
-            await server.generate_text("Hello")
-        else:
-            await server.list_models()
+        await server.generate_text("Hello")
     assert "sensitive-upstream-detail" not in str(exc.value)
     assert exc.value.__suppress_context__
     google.aio.__aexit__.assert_awaited_once()
@@ -193,22 +178,10 @@ async def test_network_error_is_redacted(google):
     assert "sensitive-request-url" not in str(exc.value)
 
 
-async def test_list_models(google):
-    async def models() -> AsyncIterator[types.Model]:
-        yield types.Model(name="models/example", display_name="Example")
-        yield types.Model(name="models/other", description="Other model")
-
-    google.models.list.return_value = models()
-    assert await server.list_models() == [
-        {"name": "models/example", "display_name": "Example", "description": ""},
-        {"name": "models/other", "display_name": "", "description": "Other model"},
-    ]
-
-
 async def test_mcp_discovery_and_generation(google):
     async with Client(server.create_server()) as client:
         tools = await client.list_tools()
-        assert {"generate_text", "list_models"} <= {tool.name for tool in tools}
+        assert "generate_text" in {tool.name for tool in tools}
         result = await client.call_tool("generate_text", {"prompt": "Hi"})
         assert result.structured_content == {
             "id": "interaction-123",
@@ -220,9 +193,9 @@ async def test_mcp_discovery_and_generation(google):
             {
                 "prompt": "Continue",
                 "previous_interaction_id": result.data.id,
-                "store": True,
             },
         )
+        assert google.interactions.create.call_args.kwargs["store"] is True
         assert (
             google.interactions.create.call_args.kwargs["previous_interaction_id"]
             == "interaction-123"

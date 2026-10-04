@@ -49,6 +49,7 @@ def request_body(requests):
     assert requests[0].method == "POST"
     assert requests[0].url.path.endswith("/interactions")
     body = json.loads(requests[0].content)
+    assert body["store"] is True
     assert body["stream"] is False
     assert "response_modalities" not in body
     assert "response_mime_type" not in body
@@ -88,7 +89,6 @@ async def test_image_real_sdk_keeps_every_output(api, tmp_path):
         image_size="2K",
         google_search=True,
         previous_interaction_id="prior",
-        store=True,
     )
     body = request_body(requests)
     assert body["model"] == "gemini-3.1-flash-image"
@@ -126,8 +126,7 @@ async def test_image_real_sdk_keeps_every_output(api, tmp_path):
     )
 
 
-@pytest.mark.parametrize("tool", [server.generate_video, server.generate_omni])
-async def test_omni_real_sdk_all_modalities_and_uri(api, tool):
+async def test_omni_real_sdk_all_modalities_and_uri(api):
     uri = "https://generativelanguage.googleapis.com/v1beta/files/generated:download?alt=media"
     requests = api(
         interaction(
@@ -144,7 +143,7 @@ async def test_omni_real_sdk_all_modalities_and_uri(api, tool):
             ("video", "video/mp4"),
         )
     ]
-    result = await tool(
+    result = await server.generate_omni(
         "Continue the scene",
         media=references,
         aspect_ratio="9:16",
@@ -152,7 +151,6 @@ async def test_omni_real_sdk_all_modalities_and_uri(api, tool):
         duration_seconds=8,
         task="extend",
         previous_interaction_id="prior",
-        store=True,
     )
     body = request_body(requests)
     assert body["model"] == "gemini-omni-1.1-flash"
@@ -176,25 +174,19 @@ async def test_omni_real_sdk_all_modalities_and_uri(api, tool):
     assert result.outputs[0].path is None
 
 
-@pytest.mark.parametrize("tool", [server.generate_video, server.generate_omni])
 @pytest.mark.parametrize(
-    ("store", "delivery", "expected"),
-    [(False, None, "inline"), (True, None, "uri"), (False, "inline", "inline")],
+    ("delivery", "expected"),
+    [(None, "uri"), ("inline", "inline"), ("uri", "uri")],
 )
-async def test_omni_delivery_follows_store(api, tool, store, delivery, expected):
+async def test_omni_delivery_defaults_to_uri(api, delivery, expected):
     requests = api(interaction({"type": "text", "text": "ok"}))
-    await tool("A scene", store=store, delivery=delivery)
+    if delivery is None:
+        await server.generate_omni("A scene")
+    else:
+        await server.generate_omni("A scene", delivery=delivery)
     body = request_body(requests)
-    assert body["store"] is store
+    assert body["store"] is True
     assert body["response_format"]["delivery"] == expected
-
-
-@pytest.mark.parametrize("tool", [server.generate_video, server.generate_omni])
-async def test_omni_uri_delivery_requires_store(api, tool):
-    requests = api(interaction({"type": "text", "text": "ok"}))
-    with pytest.raises(ToolError, match="delivery=uri requires store=true"):
-        await tool("A scene", delivery="uri")
-    assert not requests
 
 
 async def test_transcribe_real_sdk_annotations(api):
@@ -390,7 +382,7 @@ async def test_analyze_real_sdk_processing_and_current_model(api, monkeypatch):
 )
 async def test_background_status_never_claims_success(api, status):
     requests = api(interaction(status=status))
-    result = await server.generate_video("A scene", store=True, background=True)
+    result = await server.generate_omni("A scene", background=True)
     body = request_body(requests)
     assert body["background"] is True
     assert body["store"] is True
@@ -547,13 +539,13 @@ async def test_output_failure_is_redacted(tmp_path, monkeypatch):
             "generate_image",
             {"prompt": "x", "model": "gemini-3-pro-image", "image_size": "512"},
         ),
-        ("generate_video", {"prompt": "x", "model": "veo-3.1-generate-preview"}),
-        ("generate_video", {"prompt": "x", "duration_seconds": 2}),
-        ("generate_video", {"prompt": "x", "task": "extend"}),
-        ("generate_video", {"prompt": "x", "task": "image_to_video"}),
-        ("generate_video", {"prompt": "x", "background": True}),
-        ("generate_video", {"prompt": "x", "previous_interaction_id": " "}),
-        ("generate_video", {"prompt": "x", "output_directory": "relative"}),
+        ("generate_omni", {"prompt": "x", "model": "veo-3.1-generate-preview"}),
+        ("generate_omni", {"prompt": "x", "duration_seconds": 2}),
+        ("generate_omni", {"prompt": "x", "task": "extend"}),
+        ("generate_omni", {"prompt": "x", "task": "image_to_video"}),
+        ("generate_omni", {"prompt": "x", "delivery": "invalid"}),
+        ("generate_omni", {"prompt": "x", "previous_interaction_id": " "}),
+        ("generate_omni", {"prompt": "x", "output_directory": "relative"}),
         ("generate_speech", {"text": "x", "model": "gemini-3.1-flash-tts-preview"}),
         ("generate_speech", {}),
         ("generate_speech", {"text": "x", "turns": [{"text": "x"}]}),
@@ -627,7 +619,6 @@ def test_catalog_uses_current_models_only():
     "tool, arguments, model",
     [
         ("generate_image", {"prompt": "A tree"}, "gemini-3.1-flash-image"),
-        ("generate_video", {"prompt": "A scene"}, "gemini-omni-1.1-flash"),
         ("generate_omni", {"prompt": "A scene"}, "gemini-omni-1.1-flash"),
         ("generate_speech", {"text": "Hello"}, "gemini-3.8-flash-tts"),
         ("generate_music", {"prompt": "A jazz song"}, "lyria-3.5"),

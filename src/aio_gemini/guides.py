@@ -87,10 +87,10 @@ def _image_guide() -> PromptGuide:
         ["image-generation"],
         [
             "Pass the prompt as prompt and reference images as media. For iterative "
-            "editing, use store=true and previous_interaction_id.",
+            "editing, pass the returned interaction id as previous_interaction_id.",
             "Set google_search=true for search grounding; the Lite image model "
-            "does not support it. Model choices and size limits come from "
-            "list_media_models and the generate_image schema.",
+            "does not support it. Model choices and size limits are exposed in "
+            "the generate_image schema.",
             "Illustrative input/output images and SDK code are omitted. Open the "
             "source page to see those assets; prompt templates are preserved.",
         ],
@@ -100,14 +100,14 @@ def _image_guide() -> PromptGuide:
 def _video_guide() -> PromptGuide:
     return _guide(
         "Omni video generation, editing, and extension",
-        ["generate_video", "generate_omni"],
+        ["generate_omni"],
         list(get_args(OmniModel)),
         ["omni"],
         [
-            "Both tools use Omni through Interactions, not Veo. Pass ordered "
-            "reference inputs as media; image/video role tags belong in prompt.",
-            "For stateful edits or extensions, create a stored turn with store=true "
-            "and pass its id as previous_interaction_id on the next stored turn.",
+            "Omni uses Interactions. Pass ordered reference inputs as media; "
+            "image/video role tags belong in prompt.",
+            "For stateful edits or extensions, pass the returned interaction id "
+            "as previous_interaction_id on the next turn.",
             "Uploaded-video extension has separate duration, dialogue, and regional "
             "limits; see the source page's Extension constraints and guidelines.",
         ],
@@ -195,7 +195,7 @@ def _analysis_guide(media_type: AnalysisMedia) -> PromptGuide:
             "recommends image first. Both are preserved without silently reconciling "
             "this documentation difference; the MCP does not expose ordering.",
             "Set processing to agentic or static on a video media item. For long "
-            "work use background=true with store=true, then poll get_interaction. "
+            "work use background=true, then poll get_interaction. "
             "This MCP does not stream or accept stateless step_list histories.",
             "The Files guide mentions temperature and top-k tuning; analyze_media "
             "does not expose those parameters. max_output_tokens controls the "

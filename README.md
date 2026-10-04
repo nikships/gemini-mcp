@@ -73,10 +73,8 @@ An MCP client should launch it as a subprocess, as in the
 | Tool | Purpose |
 | --- | --- |
 | `generate_text` | Create a Gemini interaction and return its ID, status, and text |
-| `list_models` | List models available to your Google API key |
-| `list_media_models` | Current documented media defaults and supported model choices; no key needed |
 | `generate_image` | Nano Banana image generation and editing, with optional Google Search |
-| `generate_video` / `generate_omni` | Omni video generation, editing, extension, and first/last-frame interpolation |
+| `generate_omni` | Omni video generation, editing, extension, and first/last-frame interpolation |
 | `transcribe_audio` | Dedicated speech recognition, smart/verbatim modes, diarization, and word timestamps |
 | `generate_speech` | Single- or two-speaker TTS with voice, language, and delivery style controls |
 | `generate_music` | Lyria songs, instrumental music, clips, lyrics, and image-inspired music |
@@ -87,12 +85,15 @@ An MCP client should launch it as a subprocess, as in the
 | `download_file` | Stream an ACTIVE generated Google file to a unique local file |
 | `get_prompt_guide` | Official prompting guide by `guide`: `image`, `video`, `speech`, `music`, `transcription`, or `analysis` |
 
+See [`docs/tools.md`](docs/tools.md) for arguments, defaults, accepted values,
+constraints, and return shapes for every tool.
+
 `generate_text` calls `client.aio.interactions.create`. It accepts `prompt`,
 optional `model`, optional `system_instruction`, `max_output_tokens` (default
-4096, allowed range 1–65536), optional `previous_interaction_id`, and `store`
-(default `false`). Model-specific
+4096, allowed range 1–65536), and optional `previous_interaction_id`. Model-specific
 limits still apply. Set `GEMINI_MODEL` to change the default, `gemini-3.8-flash`,
-or pass `model` per request. Use `list_models` to check your account's access.
+or pass `model` per request. Media tool schemas expose their supported model
+choices, but do not report account-specific access.
 
 Generation now returns a structured object, not the old bare text string:
 
@@ -100,19 +101,17 @@ Generation now returns a structured object, not the old bare text string:
 {"id": "interaction-id", "status": "completed", "text": "Hello!"}
 ```
 
-To continue a conversation, call `generate_text` with `store: true`, then pass
-the returned `id` as `previous_interaction_id` on your next call. Keep
-`store: true` on each turn you want to continue later. Storage is opt-in:
-`store: false` requests that Google not save this interaction for later
-retrieval or continuation; it does not bypass Google's other data policies.
-System instructions and generation options are supplied on each call.
+All Interactions calls are stored with Google automatically. To continue a
+conversation, pass the returned `id` as `previous_interaction_id` on the next
+call. The server does not expose a storage toggle; this does not bypass Google's
+other data policies. System instructions and generation options are supplied on
+each call.
 
 `generate_text` remains non-streaming and foreground-only. The returned status
 is preserved even if text is empty, rather than reporting an incomplete or
-blocked response as successful text. `list_models` still uses the SDK's
-model-discovery endpoint.
+blocked response as successful text.
 
-Text, discovery, and metadata requests use a 60-second timeout. Media creation,
+Text and interaction metadata requests use a 60-second timeout. Media creation,
 upload, and download default to 600 seconds, configurable with `timeout_seconds`
 (1–1800). Google requests use asynchronous I/O. Clients
 are closed after each tool call. Upstream error details are redacted from tool
@@ -179,14 +178,15 @@ task-specific guides are the source of truth, not remembered model names.
 Media tool model choices are constrained to these current families, with **no
 legacy fallback**. `GEMINI_MODEL` affects only `generate_text`, not media tools.
 This is a dated snapshot, not automatic model discovery or a promise of account
-access. `list_models` reports account availability. Refresh the catalog from
-official docs before adding future models.
+access. Model schemas expose the supported choices, not account availability.
+Refresh the catalog from official docs before adding future models.
 
 All generation and analysis calls use `client.aio.interactions.create`.
-There is no `generateContent`, Imagen, or Veo fallback. **Veo**, **Live audio/live
-transcription**, **Lyria RealTime**, and **voice design/replication** have separate
-APIs and are intentionally outside this Interactions-only suite. TTS accepts
-existing custom voice IDs but does not create or clone voices.
+There is no `generateContent`, Imagen, or fallback to another video-generation
+API. **Live audio/live transcription**, **Lyria RealTime**, and **voice
+design/replication** use separate APIs and are intentionally outside this
+Interactions-only suite. TTS accepts existing custom voice IDs but does not
+create or clone voices.
 
 Sources and model-specific constraints are recorded in
 [`docs/media-api.md`](docs/media-api.md).
@@ -227,15 +227,12 @@ Base64 is omitted from MCP results by default to avoid filling model context.
 Set `include_inline_data: true` if you also need it. Local output paths refer to
 the server machine, not necessarily the MCP client's machine.
 
-Omni delivery follows `store`. With the default `store: false`, delivery is
-`"inline"` and the video is saved to a local file. With `store: true`, delivery
-defaults to `"uri"`, which suits large videos. Google rejects URI delivery
-without storage, so an explicit `delivery: "uri"` with `store: false` returns an
-error. URI outputs have `uri` and, for recognized Google Files URIs, `file_name`.
-Poll `get_file` until ACTIVE, then call `download_file` with that `file_name` to
-stream it to disk. Downloads accept Google resource names only, not arbitrary
-URLs. You can also pass `delivery: "inline"` with `store: true` to save bytes
-immediately. Google's current Omni docs note
+Omni delivery defaults to `"uri"`, which suits large videos. All Interactions
+calls are stored automatically. URI outputs have `uri` and, for recognized
+Google Files URIs, `file_name`. Poll `get_file` until ACTIVE, then call
+`download_file` with that `file_name` to stream it to disk. Downloads accept
+Google resource names only, not arbitrary URLs. You can also pass
+`delivery: "inline"` to save bytes immediately. Google's current Omni docs note
 that `get_interaction` can return inline data even when creation used URI delivery.
 
 ### Image generation or editing
@@ -246,8 +243,7 @@ Call `generate_image`:
 {
   "prompt": "Create a cinematic watercolor landscape",
   "aspect_ratio": "16:9",
-  "image_size": "2K",
-  "store": true
+  "image_size": "2K"
 }
 ```
 
@@ -258,7 +254,7 @@ Use `include_text: false` for image-only output.
 
 ### Omni video generation and editing
 
-Call `generate_video` or `generate_omni`:
+Call `generate_omni`:
 
 ```json
 {
@@ -266,12 +262,11 @@ Call `generate_video` or `generate_omni`:
   "aspect_ratio": "16:9",
   "resolution": "1080p",
   "duration_seconds": 8,
-  "store": true,
   "background": true
 }
 ```
 
-Both tools use the same Omni model and controls. Supply ordered reference images
+The tool uses the Omni model and controls. Supply ordered reference images
 for first/last frames and describe the transition in the prompt. Image, audio,
 and video references can be combined. Prompt for an edit or extension, or use
 `task: "edit"` / `"extend"` with an input video or stored `previous_interaction_id`.
@@ -339,11 +334,10 @@ for short clips. WAV output requires `lyria-3.5`.
 
 ### Background and multi-turn work
 
-Media tools accept `background: true` only with explicit `store: true`.
+Media tools accept `background: true`; interactions are stored automatically.
 Use the returned `id` with `get_interaction` until a terminal status is returned.
-The server does not auto-poll, silently enable storage, or auto-retry generation
-(which could create duplicate charges). Cancel by ID with `cancel_interaction`.
-Keep `store: true` on turns you want to retrieve or edit later, and provide
+The server does not auto-poll or auto-retry generation (which could create
+duplicate charges). Cancel by ID with `cancel_interaction`. Provide
 `previous_interaction_id` to tools that support continuation. Options such as
 output format, voices, and search are scoped to each call and must be repeated.
 Status is preserved for blocked, incomplete, failed, queued, or cancelled work;

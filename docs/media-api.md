@@ -51,9 +51,9 @@ not legacy examples. No automatic fallback is configured.
   earlier interleaved output. Do not echo user input or thought steps.
 - Unary Gemini 3.8 TTS defaults to WAV with an existing RIFF header. Save bytes
   unchanged. Raw L16, mu-law, and A-law must be explicitly requested.
-- `store=false` is the server default. Background execution requires
-  `store=true`; a stored predecessor is required for continuation. Do not
-  silently opt a caller into storage.
+- The server always sends `store=true` for Interactions generation, analysis,
+  and transcription. No tool exposes a storage toggle. Background execution and
+  continuation use the retained interaction ID.
 
 ## Model-specific limits
 
@@ -65,9 +65,8 @@ not legacy examples. No automatic fallback is configured.
   reach 40 seconds. Extending uploaded videos is currently unavailable in the
   EEA, Switzerland, and UK. Uploaded spoken dialogue cannot be extended with
   more speech; generated-video multi-turn speech extension is supported.
-- Omni URI delivery requires `store=true` (Google returns HTTP 400 otherwise),
-  so the server defaults delivery to inline when `store=false` and to URI when
-  `store=true`, rather than opting the caller into storage.
+- Omni delivery defaults to URI; callers can request inline bytes. Interactions
+  are always stored by the server.
 - Omni URI delivery is recommended for videos over 4 MB. Poll the corresponding
   Files resource until ACTIVE before downloading. The guide warns that GET
   interaction responses currently return inline data even when creation used
@@ -99,11 +98,9 @@ compatibility workaround when upgrading the SDK.
 
 ## Separate APIs, deliberately not substituted
 
-The [video guide](https://ai.google.dev/gemini-api/docs/video) recommends Omni
-for default video generation through Interactions. Veo uses its separate video
-generation API. Live audio, live transcription, Lyria RealTime, and creating or
-replicating voices also have separate APIs. This implementation does not disguise
-those APIs as Interactions tools. Existing custom voices can be used by TTS.
+Omni is the only video-generation model/tool in this implementation. Live audio,
+live transcription, Lyria RealTime, and creating or replicating voices use
+separate APIs and are not included. Existing custom voices can be used by TTS.
 
 ## Refreshing this snapshot
 

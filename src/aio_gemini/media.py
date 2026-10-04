@@ -267,7 +267,7 @@ def media_output_file(
     except OSError:
         raise ToolError(
             "Could not save generated media. Check output directory permissions. "
-            "If store=true, retrieve the interaction by its ID to retry."
+            "Retrieve the interaction by its ID to retry if an ID was returned."
         ) from None
 
 

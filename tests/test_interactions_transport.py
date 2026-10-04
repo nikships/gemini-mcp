@@ -37,7 +37,6 @@ async def test_real_sdk_posts_interactions(sdk_transport):
         system_instruction="Be brief",
         max_output_tokens=123,
         previous_interaction_id="prior-turn",
-        store=True,
     )
     assert result.model_dump() == {
         "id": "real-sdk-id",

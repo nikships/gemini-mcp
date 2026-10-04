@@ -27,7 +27,6 @@ from aio_gemini.catalog import (
     OmniModel,
     SpeechModel,
     TranscribeModel,
-    list_media_models,
 )
 from aio_gemini.guides import get_prompt_guide
 from aio_gemini.media import (
@@ -122,13 +121,10 @@ async def generate_text(
     system_instruction: str | None = None,
     max_output_tokens: Annotated[int, Field(ge=1, le=65_536)] = 4096,
     previous_interaction_id: Annotated[str | None, Field(min_length=1)] = None,
-    store: bool = False,
 ) -> InteractionResult:
     """Generate text with Gemini.
 
-    Uses GEMINI_MODEL (or the server default) unless model is supplied. Set
-    store=True to save this interaction with Google for retrieval or
-    continuation using previous_interaction_id.
+    Uses GEMINI_MODEL (or the server default) unless model is supplied.
     """
     if not prompt.strip():
         raise ToolError("prompt must not be blank.")
@@ -148,7 +144,7 @@ async def generate_text(
             system_instruction=system_instruction,
             generation_config={"max_output_tokens": max_output_tokens},
             previous_interaction_id=previous_id,
-            store=store,
+            store=True,
             stream=False,
             background=False,
             timeout=60,
@@ -160,20 +156,6 @@ async def generate_text(
         status=response.status,
         text=response.output_text or "",
     )
-
-
-async def list_models() -> list[dict[str, str]]:
-    """List models available to your API key."""
-    async with _google_client() as client:
-        pager = await client.models.list()
-        return [
-            {
-                "name": model.name or "",
-                "display_name": model.display_name or "",
-                "description": model.description or "",
-            }
-            async for model in pager
-        ]
 
 
 def _not_blank(value: str, name: str) -> str:
@@ -191,14 +173,11 @@ async def _create_media(
     tools: list[dict[str, Any]] | None = None,
     system_instruction: str | None = None,
     previous_interaction_id: str | None = None,
-    store: bool = False,
     background: bool = False,
     timeout_seconds: int = 600,
     output_directory_path: str | None = None,
     include_inline_data: bool = False,
 ) -> MediaResult:
-    if background and not store:
-        raise ToolError("background=true requires store=true for retrieval.")
     if previous_interaction_id is not None:
         previous_interaction_id = _not_blank(
             previous_interaction_id, "previous_interaction_id"
@@ -213,7 +192,7 @@ async def _create_media(
             tools=tools,
             system_instruction=system_instruction,
             previous_interaction_id=previous_interaction_id,
-            store=store,
+            store=True,
             background=background,
             stream=False,
             timeout=timeout_seconds,
@@ -232,7 +211,6 @@ async def generate_image(
     include_text: bool = True,
     google_search: bool = False,
     previous_interaction_id: NonBlank | None = None,
-    store: bool = False,
     background: bool = False,
     timeout_seconds: Timeout = 600,
     output_directory: NonBlank | None = None,
@@ -265,7 +243,6 @@ async def generate_image(
         if include_text
         else image_format,
         previous_interaction_id=previous_interaction_id,
-        store=store,
         background=background,
         timeout_seconds=timeout_seconds,
         output_directory_path=output_directory,
@@ -281,9 +258,8 @@ async def generate_omni(
     resolution: VideoResolution = "720p",
     duration_seconds: Annotated[int | None, Field(ge=3, le=10)] = None,
     task: VideoTask | None = None,
-    delivery: Delivery | None = None,
+    delivery: Delivery = "uri",
     previous_interaction_id: NonBlank | None = None,
-    store: bool = False,
     background: bool = False,
     timeout_seconds: Timeout = 600,
     output_directory: NonBlank | None = None,
@@ -293,15 +269,9 @@ async def generate_omni(
 
     Two ordered images can be first/last frames when described in the prompt.
     Prefer prompt-based edits and extension; task applies strict constraints.
-    Delivery defaults to inline (saved to a local file) when store=false and to
-    uri (Google file URIs) when store=true; uri delivery requires store=true.
-    Set store=true for multi-turn editing; background also requires store=true.
+    Delivery defaults to uri (Google Files) or may be set to inline.
     """
     _not_blank(prompt, "prompt")
-    if delivery is None:
-        delivery = "uri" if store else "inline"
-    elif delivery == "uri" and not store:
-        raise ToolError("delivery=uri requires store=true.")
     contents = await media_contents(media, allowed={"image", "audio", "video"})
     if task in {"edit", "extend"} and not (
         previous_interaction_id or any(item["type"] == "video" for item in contents)
@@ -327,45 +297,9 @@ async def generate_omni(
         response_format=format,
         generation_config={"video_config": {"task": task}} if task else None,
         previous_interaction_id=previous_interaction_id,
-        store=store,
         background=background,
         timeout_seconds=timeout_seconds,
         output_directory_path=output_directory,
-        include_inline_data=include_inline_data,
-    )
-
-
-async def generate_video(
-    prompt: NonBlank,
-    media: MediaList | None = None,
-    model: OmniModel = DEFAULT_OMNI_MODEL,
-    aspect_ratio: VideoAspectRatio | None = None,
-    resolution: VideoResolution = "720p",
-    duration_seconds: Annotated[int | None, Field(ge=3, le=10)] = None,
-    task: VideoTask | None = None,
-    delivery: Delivery | None = None,
-    previous_interaction_id: NonBlank | None = None,
-    store: bool = False,
-    background: bool = False,
-    timeout_seconds: Timeout = 600,
-    output_directory: NonBlank | None = None,
-    include_inline_data: bool = False,
-) -> MediaResult:
-    """Generate video with Omni. Alias for generate_omni."""
-    return await generate_omni(
-        prompt=prompt,
-        media=media,
-        model=model,
-        aspect_ratio=aspect_ratio,
-        resolution=resolution,
-        duration_seconds=duration_seconds,
-        task=task,
-        delivery=delivery,
-        previous_interaction_id=previous_interaction_id,
-        store=store,
-        background=background,
-        timeout_seconds=timeout_seconds,
-        output_directory=output_directory,
         include_inline_data=include_inline_data,
     )
 
@@ -378,7 +312,6 @@ async def transcribe_audio(
     custom_vocabulary: Annotated[list[NonBlank] | None, Field(max_length=1000)] = None,
     diarization: bool = False,
     word_timestamps: bool = False,
-    store: bool = False,
     background: bool = False,
     timeout_seconds: Timeout = 600,
 ) -> MediaResult:
@@ -413,7 +346,6 @@ async def transcribe_audio(
         model=model,
         input=await media_contents([audio], allowed={"audio"}),
         generation_config={"transcription_config": config},
-        store=store,
         background=background,
         timeout_seconds=timeout_seconds,
     )
@@ -430,7 +362,6 @@ async def generate_speech(
     mime_type: SpeechMimeType = "audio/wav",
     sample_rate: Annotated[int | None, Field(gt=0)] = None,
     previous_interaction_id: NonBlank | None = None,
-    store: bool = False,
     background: bool = False,
     timeout_seconds: Timeout = 600,
     output_directory: NonBlank | None = None,
@@ -493,7 +424,6 @@ async def generate_speech(
         response_format=format,
         generation_config={"speech_config": speech_config},
         previous_interaction_id=previous_interaction_id,
-        store=store,
         background=background,
         timeout_seconds=timeout_seconds,
         output_directory_path=output_directory,
@@ -507,7 +437,6 @@ async def generate_music(
     model: MusicModel = DEFAULT_MUSIC_MODEL,
     mime_type: Literal["audio/mp3", "audio/wav"] = "audio/mp3",
     include_text: bool = True,
-    store: bool = False,
     background: bool = False,
     timeout_seconds: Timeout = 600,
     output_directory: NonBlank | None = None,
@@ -530,7 +459,6 @@ async def generate_music(
         response_format=[{"type": "text"}, audio_format]
         if include_text
         else audio_format,
-        store=store,
         background=background,
         timeout_seconds=timeout_seconds,
         output_directory_path=output_directory,
@@ -544,7 +472,6 @@ async def analyze_media(
     system_instruction: str | None = None,
     max_output_tokens: Annotated[int, Field(ge=1, le=65_536)] = 4096,
     previous_interaction_id: NonBlank | None = None,
-    store: bool = False,
     background: bool = False,
     timeout_seconds: Timeout = 600,
 ) -> MediaResult:
@@ -566,7 +493,6 @@ async def analyze_media(
         system_instruction=system_instruction,
         generation_config={"max_output_tokens": max_output_tokens},
         previous_interaction_id=previous_interaction_id,
-        store=store,
         background=background,
         timeout_seconds=timeout_seconds,
     )
@@ -726,22 +652,16 @@ def create_server() -> FastMCP:
             "full. Do not prompt from memory. Guides are free and offline. "
             "Media tools use documented current models only, "
             "and save inline output to local files; URI output is not downloaded. "
-            "Use list_media_models for defaults and API boundaries. Generation "
-            "returns id, status, text, and ordered media outputs. Set "
-            "store=true to save a turn with Google, then pass its id as "
-            "previous_interaction_id to continue. Background requires store=true; "
-            "poll get_interaction to retrieve it. Upload large input with upload_file, "
-            "poll get_file until ACTIVE, then pass its uri and mime_type. "
-            "Use list_models to discover account access."
+            "Generation returns id, status, text, and ordered media outputs. "
+            "Poll background work with get_interaction. Upload large input with "
+            "upload_file, "
+            "poll get_file until ACTIVE, then pass its uri and mime_type."
         ),
         mask_error_details=True,
     )
     server.tool(generate_text)
-    server.tool(list_models)
     for tool in (
-        list_media_models,
         generate_image,
-        generate_video,
         generate_omni,
         transcribe_audio,
         generate_speech,

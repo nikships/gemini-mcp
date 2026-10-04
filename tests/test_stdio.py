@@ -37,11 +37,8 @@ async def test_real_stdio(entrypoint, mode):
         tools = await client.list_tools()
         assert {
             "generate_text",
-            "list_models",
-            "list_media_models",
             "get_prompt_guide",
             "generate_image",
-            "generate_video",
             "generate_omni",
             "transcribe_audio",
             "generate_speech",
@@ -56,10 +53,20 @@ async def test_real_stdio(entrypoint, mode):
             "delete_file",
             "download_file",
         } == {tool.name for tool in tools}
+        for tool in (
+            "generate_text",
+            "generate_image",
+            "generate_omni",
+            "transcribe_audio",
+            "generate_speech",
+            "generate_music",
+            "analyze_media",
+        ):
+            tool_info = next(item for item in tools if item.name == tool)
+            assert "store" not in tool_info.input_schema["properties"]
         generation = next(tool for tool in tools if tool.name == "generate_text")
         assert "prompt" in generation.input_schema["required"]
         assert "previous_interaction_id" in generation.input_schema["properties"]
-        assert generation.input_schema["properties"]["store"]["default"] is False
         assert {"id", "status", "text"} <= set(generation.output_schema["properties"])
         image = next(tool for tool in tools if tool.name == "generate_image")
         assert image.input_schema["properties"]["model"]["default"] == (
@@ -70,17 +77,14 @@ async def test_real_stdio(entrypoint, mode):
         )
         with pytest.raises(ToolError, match="Set GEMINI_API_KEY or GOOGLE_API_KEY"):
             await client.call_tool("generate_text", {"prompt": "Hello"})
-        with pytest.raises(ToolError, match="Set GEMINI_API_KEY or GOOGLE_API_KEY"):
-            await client.call_tool("list_models")
         for tool, arguments in (
             ("generate_image", {"prompt": "A landscape"}),
-            ("generate_video", {"prompt": "A landscape"}),
+            ("generate_omni", {"prompt": "A landscape"}),
             ("generate_speech", {"text": "Hello"}),
             ("generate_music", {"prompt": "Piano music"}),
         ):
             with pytest.raises(ToolError, match="Set GEMINI_API_KEY or GOOGLE_API_KEY"):
                 await client.call_tool(tool, arguments)
-        assert (await client.call_tool("list_media_models")).data["verified_on"]
         music_guide = await client.call_tool("get_prompt_guide", {"guide": "music"})
         assert music_guide.structured_content["sources"][0]["url"].endswith(
             "/lyria-prompt-guide"

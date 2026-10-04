@@ -22,8 +22,7 @@ MusicModel = Literal["lyria-3.5", "lyria-3-clip-preview"]
 def list_media_models() -> dict[str, object]:
     """Return the documented current model catalog, without an API request.
 
-    A dated documentation snapshot, not account availability; use list_models
-    for that.
+    A dated documentation snapshot, not account-specific model availability.
     """
     return {
         "verified_on": DOCS_VERIFIED_ON,
@@ -43,7 +42,7 @@ def list_media_models() -> dict[str, object]:
                     "image-generation",
                 ),
                 (
-                    "generate_video / generate_omni",
+                    "generate_omni",
                     DEFAULT_OMNI_MODEL,
                     list(get_args(OmniModel)),
                     "omni",
@@ -69,7 +68,6 @@ def list_media_models() -> dict[str, object]:
             )
         ],
         "separate_apis": [
-            "Veo video generation",
             "Live audio and live transcription",
             "Lyria RealTime",
             "Voice design and voice replication",
