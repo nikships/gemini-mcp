@@ -280,3 +280,60 @@ To elevate your results from good to great, incorporate these professional strat
 - **Use step-by-step instructions:** For complex scenes with many elements, break your prompt into steps. "First, create a background of a serene, misty forest at dawn. Then, in the foreground, add a moss-covered ancient stone altar. Finally, place a single, glowing sword on top of the altar."
 - **Use "semantic negative prompts":** Instead of saying "no cars," describe the intended scene positively: "an empty, deserted street with no signs of traffic."
 - **Control the camera:** Use photographic and cinematic language to control the composition. Terms like `wide-angle shot` , `macro shot` , `low-angle perspective` .
+
+## Grounding with Google Search: when to use it
+
+- **Grounding with Google Search** : The model can use Google Search as a tool to verify facts and generate imagery based on real-time data (e.g., current weather maps, stock charts, recent events).
+  - **Not supported by Gemini 3.1 Flash Lite Image model.**
+  - **Gemini Nano Banana 2.1 and Gemini 3.1 Flash Image** add the integration of Google Image Search Grounding alongside Web Search.
+
+### Grounding with Google Search
+
+Use the [Google Search tool](https://ai.google.dev/gemini-api/docs/google-search) to generate images based on real-time information, such as weather forecasts, stock charts, or recent events.
+
+Note that when using Grounding with Google Search with image generation, image-based search results are not passed to the generation model and are excluded from the response (see [Grounding with Google Image Search](https://ai.google.dev/gemini-api/docs/image-generation#image-search) )
+
+The response includes `google_search_call` and `google_search_result` steps, along with inline `url_citation` annotations on the text step:
+
+- **`google_search_result`** : Contains `search_suggestions` , an HTML snippet for rendering search suggestions in your UI.
+- **`url_citation` annotations** : Inline citations on the text step linking parts of the response to their web sources.
+
+### Grounding with Google Search for images (Nano Banana 2.1 and 3.1 Flash)
+
+> **Note:** This feature is only available for the Gemini Nano Banana 2.1 and Gemini 3.1 Flash Image models.
+
+Grounding with Google Image Search allows models to use web images retrieved via Google Image Search as visual context for image generation. Image Search is a new search type within the existing Grounding with Google Search tool, functioning alongside standard [Web Search](https://ai.google.dev/gemini-api/docs/image-generation#use-with-grounding) .
+
+To enable Image Search, configure the `google_search` tool in your API request and specify `image_search` within the `search_types` array. Image Search can be used independently or together with Web Search.
+
+**Display requirements**
+
+When you use Image Search within Grounding with Google Search, you must display the `search_suggestions` from the `google_search_result` step. Full usage requirements are detailed in the [Terms of Service](https://ai.google.dev/gemini-api/terms#grounding-with-google-search) .
+
+**Response**
+
+For grounded responses using image search, the API returns inline citations and attribution metadata as part of the response steps:
+
+- **`url_citation` annotations** : Inline citations on the text content block within `model_output` , linking the generated content to its source.
+
+- **`google_search_result`** : Contains `search_suggestions` , an HTML snippet for rendering search suggestions in your UI.
+
+### Example prompts that use search
+
+These prompts come from Google's examples. The first uses image search and was generated with Nano Banana 2; the second and third use search and were generated with Nano Banana Pro.
+
+```
+Use image search to find accurate images of a resplendent quetzal bird. Create a beautiful 3:2 wallpaper of this bird, with a natural top to bottom gradient and minimal composition.
+```
+
+```
+Use search to find how the Gemini 3 Flash launch has been received. Use this information to write a short article about it (with headings). Return a photo of the article as it appeared in a design focused glossy magazine. It is a photo of a single folded over page, showing the article about Gemini 3 Flash. One hero photo. Headline in serif.
+```
+
+```
+Present a clear, 45° top-down isometric miniature 3D cartoon scene of London, featuring its most iconic landmarks and architectural elements. Use soft, refined textures with realistic PBR materials and gentle, lifelike lighting and shadows. Integrate the current weather conditions directly into the city environment to create an immersive atmospheric mood. Use a clean, minimalistic composition with a soft, solid-colored background. At the top-center, place the title "London" in large bold text, a prominent weather icon beneath it, then the date (small text) and temperature (medium text). All text must be centered with consistent spacing, and may subtly overlap the tops of the buildings.
+```
+
+### Limitations that affect grounding
+
+- `gemini-nano-banana-2.1` and `gemini-3.1-flash-image` Grounding with Google Search do not support using real-world images of people from web search at this time.

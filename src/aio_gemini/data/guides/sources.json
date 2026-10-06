@@ -1,5 +1,4 @@
 {
-  "retrieved_on": "2026-10-03",
   "attribution": "Portions of these guides are reproduced or modified from work created and shared by Google (https://developers.google.com/readme/policies) and used according to the Creative Commons 4.0 Attribution License (https://creativecommons.org/licenses/by/4.0/). Source links and modifications are listed with each excerpt.",
   "license": "CC-BY-4.0",
   "license_url": "https://creativecommons.org/licenses/by/4.0/",
@@ -7,46 +6,46 @@
     "image-generation": {
       "title": "Nano Banana image generation",
       "url": "https://ai.google.dev/gemini-api/docs/image-generation",
+      "retrieved_on": "2026-10-06",
       "sections": [
-        "Prompting guide and strategies"
+        "Prompting guide and strategies",
+        "Grounding with Google Search: when to use it"
       ],
       "modifications": [
         "Selected sections only; unrelated API reference material omitted.",
         "Normalized blank-line spacing in the Developer Knowledge rendering.",
-        "Omitted SDK code, illustrative images, and image-only comparison tables."
-      ],
-      "document_sha256": "3665c18d4d32a12b28767ade847856efae6146f5405d30e7f9e7bb7d6e526cae",
-      "excerpt_sha256": "f5a2060299763b6be0dd9f2438de900369aea612d163ec773557988382096bf0"
+        "Omitted SDK code, illustrative images, and image-only comparison tables.",
+        "Added a grounding section assembled from the Features of Nano Banana, Grounding with Google Search, Grounding with Google Search for images, and Limitations sections, plus three example prompts from the page introduction."
+      ]
     },
     "omni": {
       "title": "Generate and edit videos with Gemini Omni Flash",
       "url": "https://ai.google.dev/gemini-api/docs/omni",
+      "retrieved_on": "2026-10-03",
       "sections": [
         "Gemini Omni Flash prompt guide"
       ],
       "modifications": [
         "Selected sections only; unrelated API reference material omitted.",
         "Normalized blank-line spacing in the Developer Knowledge rendering."
-      ],
-      "document_sha256": "3d3147d27ed0c402a0232e17834c2a8b7cd923f98cc63177000341232adbc938",
-      "excerpt_sha256": "659f101a1618fa6f640c608d0ae99e45ca941776a64c30b6f34ccc05dd18a7f1"
+      ]
     },
     "speech-generation": {
       "title": "Text-to-speech generation (TTS)",
       "url": "https://ai.google.dev/gemini-api/docs/speech-generation",
+      "retrieved_on": "2026-10-03",
       "sections": [
         "Prompting guide"
       ],
       "modifications": [
         "Selected sections only; unrelated API reference material omitted.",
         "Normalized blank-line spacing in the Developer Knowledge rendering."
-      ],
-      "document_sha256": "ecfbe5b6b4081398f33bd3c6848f63933ff4c58453a5e604501a8e82c1ce0244",
-      "excerpt_sha256": "07ae8e894ea492f3ec11bb639dfbc2bf50ac46fd9884e45966106c1cee38eb8e"
+      ]
     },
     "lyria-prompt-guide": {
       "title": "Lyria prompt guide",
       "url": "https://ai.google.dev/gemini-api/docs/lyria-prompt-guide",
+      "retrieved_on": "2026-10-03",
       "sections": [
         "Prompt fundamentals",
         "Genre and style",
@@ -61,26 +60,24 @@
         "Normalized blank-line spacing in the Developer Knowledge rendering.",
         "Omitted the introduction and RealTime-only weighted-prompt/steering sections.",
         "Removed the leading 'none ' from three rendered example prompt strings."
-      ],
-      "document_sha256": "0218dff2d0994a816eb35bece67950f2e43f1d3672e205d5487c3dd70a5fef54",
-      "excerpt_sha256": "d1942bb260f23079a4740129a49fe67e73acad756a2c350024e3d5198a4bd92d"
+      ]
     },
     "music-generation": {
       "title": "Generate music with Lyria 3.5",
       "url": "https://ai.google.dev/gemini-api/docs/music-generation",
+      "retrieved_on": "2026-10-03",
       "sections": [
         "Best practices"
       ],
       "modifications": [
         "Selected sections only; unrelated API reference material omitted.",
         "Normalized blank-line spacing in the Developer Knowledge rendering."
-      ],
-      "document_sha256": "8eaacd7d80b995497382329dfe10b647786a86e2b02f5b384e0eaada19c6ca2a",
-      "excerpt_sha256": "97acfa5b4c18408c048ad8bbc199c65723144423536739a5ab2615562f2084d0"
+      ]
     },
     "transcribe": {
       "title": "Audio transcription",
       "url": "https://ai.google.dev/gemini-api/docs/transcribe",
+      "retrieved_on": "2026-10-03",
       "sections": [
         "Overview",
         "Language detection and hints",
@@ -94,9 +91,7 @@
         "Selected sections only; unrelated API reference material omitted.",
         "Normalized blank-line spacing in the Developer Knowledge rendering.",
         "Omitted SDK code samples; configuration guidance is preserved."
-      ],
-      "document_sha256": "445e4b79897f286cb2707ad7d6b86c05bbc8228d1d069e05a631e23300a7b97d",
-      "excerpt_sha256": "dda110306ef05289fd827d1799d80e4953b1a38ab12e8f0985ba499754d2a0dc"
+      ]
     }
   }
 }

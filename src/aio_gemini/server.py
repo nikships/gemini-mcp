@@ -146,6 +146,15 @@ async def _create_media(
     )
 
 
+def _search_tools(google_search: bool, image_search: bool) -> list[dict] | None:
+    if image_search:
+        search_types = (
+            ["web_search", "image_search"] if google_search else ["image_search"]
+        )
+        return [{"type": "google_search", "search_types": search_types}]
+    return [{"type": "google_search"}] if google_search else None
+
+
 async def generate_image(
     prompt: NonBlank,
     media: MediaList | None = None,
@@ -154,6 +163,7 @@ async def generate_image(
     image_size: Literal["512", "1K", "2K", "4K"] = "1K",
     include_text: bool = True,
     google_search: bool = False,
+    image_search: bool = False,
     previous_interaction_id: NonBlank | None = None,
     background: bool = False,
     timeout_seconds: Timeout = 600,
@@ -165,13 +175,21 @@ async def generate_image(
     Supply reference images, videos, or PDFs, or continue a stored interaction.
     Lite supports only 1K and no Google Search. Nano Banana 2.1 and Pro do not
     support 512. Nano Banana 2.1 always runs at the highest thinking level.
+    image_search adds Google Image Search grounding (Nano Banana 2.1 and 2 only,
+    not for people); it works alone or together with google_search.
     """
     _not_blank(prompt, "prompt")
     if model == "gemini-nano-banana-2.1" and image_size == "512":
         raise ToolError("Nano Banana 2.1 supports 1K, 2K, or 4K, not 512.")
     if model == "gemini-3.1-flash-lite-image":
-        if image_size != "1K" or google_search:
-            raise ToolError("Nano Banana 2 Lite supports only 1K and no Google Search.")
+        if image_size != "1K" or google_search or image_search:
+            raise ToolError(
+                "Nano Banana 2 Lite supports only 1K and no search grounding."
+            )
+    if image_search and model == "gemini-3-pro-image":
+        raise ToolError(
+            "Image Search grounding is supported only by Nano Banana 2.1 and 2."
+        )
     if model == "gemini-3-pro-image" and image_size == "512":
         raise ToolError("Nano Banana Pro supports 1K, 2K, or 4K, not 512.")
     if sum(item.type == "image" for item in media or []) > 14:
@@ -183,7 +201,7 @@ async def generate_image(
         image_format["aspect_ratio"] = aspect_ratio
     # Search declarations are scoped to each interaction, including edit turns.
     return await _create_media(
-        tools=[{"type": "google_search"}] if google_search else None,
+        tools=_search_tools(google_search, image_search),
         model=model,
         input=contents,
         response_format=[{"type": "text"}, image_format]

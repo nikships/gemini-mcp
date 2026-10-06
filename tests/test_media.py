@@ -513,6 +513,18 @@ async def test_output_failure_is_redacted(tmp_path, monkeypatch):
             {"prompt": "x", "model": "gemini-3-pro-image", "image_size": "512"},
         ),
         ("generate_image", {"prompt": "x", "image_size": "512"}),
+        (
+            "generate_image",
+            {
+                "prompt": "x",
+                "model": "gemini-3.1-flash-lite-image",
+                "image_search": True,
+            },
+        ),
+        (
+            "generate_image",
+            {"prompt": "x", "model": "gemini-3-pro-image", "image_search": True},
+        ),
         ("generate_omni", {"prompt": "x", "model": "veo-3.1-generate-preview"}),
         ("generate_omni", {"prompt": "x", "duration_seconds": 2}),
         ("generate_omni", {"prompt": "x", "task": "extend"}),
@@ -571,6 +583,38 @@ async def test_invalid_requests_never_contact_google(sdk_transport, tool, argume
         with pytest.raises(ToolError):
             await client.call_tool(tool, arguments)
     assert requests == []
+
+
+@pytest.mark.parametrize(
+    "google_search, image_search, tools",
+    [
+        (False, False, None),
+        (True, False, [{"type": "google_search"}]),
+        (
+            False,
+            True,
+            [{"type": "google_search", "search_types": ["image_search"]}],
+        ),
+        (
+            True,
+            True,
+            [
+                {
+                    "type": "google_search",
+                    "search_types": ["web_search", "image_search"],
+                }
+            ],
+        ),
+    ],
+)
+async def test_image_search_serializes_search_types(
+    api, google_search, image_search, tools
+):
+    requests = api(interaction({"type": "text", "text": "Done"}))
+    await server.generate_image(
+        "A quetzal", google_search=google_search, image_search=image_search
+    )
+    assert request_body(requests).get("tools") == tools
 
 
 def test_catalog_uses_current_models_only():

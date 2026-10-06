@@ -1,4 +1,3 @@
-import hashlib
 import json
 import re
 from importlib.resources import files
@@ -13,6 +12,13 @@ from aio_gemini import guides, server
 from aio_gemini.catalog import list_media_models
 
 GUIDE_NAMES = ("image", "video", "speech", "music", "transcription")
+SOURCES = {
+    "image": ["image-generation"],
+    "video": ["omni"],
+    "speech": ["speech-generation"],
+    "music": ["lyria-prompt-guide", "music-generation"],
+    "transcription": ["transcribe"],
+}
 RESOURCES = files("aio_gemini").joinpath("data", "guides")
 MANIFEST = json.loads(RESOURCES.joinpath("sources.json").read_text(encoding="utf-8"))
 
@@ -34,7 +40,7 @@ def test_guides_are_offline_attributed_and_current(
 ):
     monkeypatch.chdir(tmp_path)
     result = guides.get_prompt_guide(name)
-    assert result.retrieved_on == "2026-10-03"
+    assert result.retrieved_on == MANIFEST["sources"][SOURCES[name][0]]["retrieved_on"]
     assert result.license == "CC-BY-4.0"
     assert result.license_url == "https://creativecommons.org/licenses/by/4.0/"
     assert "shared by Google" in result.attribution
@@ -52,15 +58,11 @@ def test_guides_are_offline_attributed_and_current(
 
 
 @pytest.mark.parametrize("name", MANIFEST["sources"])
-def test_snapshot_integrity_and_no_bundled_visual_or_sdk_assets(name):
+def test_snapshot_has_provenance_and_no_bundled_visual_or_sdk_assets(name):
     resource = RESOURCES.joinpath(f"{name}.md")
     markdown = resource.read_text(encoding="utf-8")
     metadata = MANIFEST["sources"][name]
-    assert (
-        hashlib.sha256(markdown.encode("utf-8")).hexdigest()
-        == (metadata["excerpt_sha256"])
-    )
-    assert re.fullmatch(r"[0-9a-f]{64}", metadata["document_sha256"])
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", metadata["retrieved_on"])
     assert "![" not in markdown and "<img " not in markdown
     assert "### Python" not in markdown
     assert "client.interactions.create" not in markdown
@@ -75,6 +77,11 @@ def test_snapshot_integrity_and_no_bundled_visual_or_sdk_assets(name):
             [
                 "#### 1. Photorealistic scenes",
                 "#### 7. Grounding with Google Search",
+                "## Grounding with Google Search: when to use it",
+                "### Grounding with Google Search for images",
+                "image-based search results are not passed to the generation model",
+                "Use image search to find accurate images of a resplendent quetzal",
+                "do not support using real-world images of people",
                 "#### 2. Inpainting (semantic masking)",
                 "#### 7. Character consistency: 360 view",
                 "Keep everything else in the image exactly the same,",

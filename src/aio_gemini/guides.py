@@ -53,8 +53,8 @@ def _guide(
         resources.joinpath("sources.json").read_text(encoding="utf-8")
     )
     sources = []
-    for name in source_names:
-        source = manifest["sources"][name]
+    used = [manifest["sources"][name] for name in source_names]
+    for name, source in zip(source_names, used, strict=True):
         sources.append(
             GuideSource(
                 title=source["title"],
@@ -68,7 +68,7 @@ def _guide(
         title=title,
         related_tools=related_tools,
         models=models,
-        retrieved_on=manifest["retrieved_on"],
+        retrieved_on=min(source["retrieved_on"] for source in used),
         sources=sources,
         attribution=manifest["attribution"],
         license=manifest["license"],
@@ -86,9 +86,23 @@ def _image_guide() -> PromptGuide:
         [
             "Pass the prompt as prompt and reference images as media. For iterative "
             "editing, pass the returned interaction id as previous_interaction_id.",
-            "Set google_search=true for search grounding; the Lite image model "
-            "does not support it. Model choices and size limits are exposed in "
-            "the generate_image schema.",
+            "Model choices and size limits are exposed in the generate_image schema.",
+            "Search grounding is off by default. Set google_search=true when the "
+            "image depends on real-time or recent facts such as news, weather, "
+            "sports results, or stock charts, and leave it off for purely creative "
+            "prompts or edits that need no outside facts. The model decides whether "
+            "to search and each search query is billed on Gemini 3 models.",
+            "Set image_search=true when the image must accurately depict a "
+            "real-world subject, such as a species, landmark, or product, and "
+            "web images would help as visual context. It works alone or with "
+            "google_search, and only on Nano Banana 2.1 and 2. Lite and Pro do not "
+            "support it, and it cannot be used to search for people.",
+            "google_search alone does not pass image results to the model, so "
+            "use image_search when visual references matter. Lite supports no "
+            "search grounding at all.",
+            "Grounded results carry Google's display requirements (search "
+            "suggestions, and source-page links for image search). Apps that show "
+            "grounded output to end users must follow the linked Terms of Service.",
             "Illustrative input/output images and SDK code are omitted. Open the "
             "source page to see those assets; prompt templates are preserved.",
         ],

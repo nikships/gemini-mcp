@@ -71,7 +71,7 @@ An MCP client should launch it as a subprocess, as in the
 
 | Tool | Purpose |
 | --- | --- |
-| `generate_image` | Nano Banana image generation and editing, with optional Google Search |
+| `generate_image` | Nano Banana image generation and editing, with optional Google Search and Image Search grounding |
 | `generate_omni` | Omni video generation, editing, extension, and first/last-frame interpolation |
 | `transcribe_audio` | Dedicated speech recognition, smart/verbatim modes, diarization, and word timestamps |
 | `generate_speech` | Single- or two-speaker TTS with voice, language, and delivery style controls |
