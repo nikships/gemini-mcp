@@ -347,28 +347,6 @@ async def test_lyria_real_sdk_keeps_interleaved_lyrics(api, model):
     assert await asyncio.to_thread(Path(result.outputs[1].path).read_bytes) == b"music"
 
 
-async def test_analyze_real_sdk_processing_and_current_model(api, monkeypatch):
-    monkeypatch.setenv("GEMINI_MODEL", "old-text-override")
-    requests = api(interaction({"type": "text", "text": "A lecture"}))
-    result = await server.analyze_media(
-        "Summarize",
-        [
-            media.MediaInput(
-                type="video",
-                mime_type="video/mp4",
-                uri="files/video",
-                processing="agentic",
-            )
-        ],
-        system_instruction="Be brief",
-    )
-    body = request_body(requests)
-    assert body["model"] == "gemini-3.8-flash"
-    assert body["input"][0]["content"][0]["processing"] == "agentic"
-    assert body["system_instruction"] == "Be brief"
-    assert result.text == "A lecture"
-
-
 @pytest.mark.parametrize(
     "status",
     [
@@ -462,12 +440,6 @@ async def test_get_cancel_delete_interactions_real_sdk(sdk_transport, tmp_path):
             "mime_type": "audio/mp3",
             "uri": " ",
         },
-        {
-            "type": "audio",
-            "mime_type": "audio/mp3",
-            "uri": "files/a",
-            "processing": "agentic",
-        },
         {"type": "image", "mime_type": "image/png", "data": "QQ==", "uri": "files/a"},
     ],
 )
@@ -557,7 +529,6 @@ async def test_output_failure_is_redacted(tmp_path, monkeypatch):
             {"prompt": "x", "model": "lyria-3-clip-preview", "mime_type": "audio/wav"},
         ),
         ("generate_music", {"prompt": "x", "timeout_seconds": 0}),
-        ("analyze_media", {"prompt": "x", "media": []}),
         (
             "transcribe_audio",
             {
@@ -605,7 +576,6 @@ def test_catalog_uses_current_models_only():
     assert snapshot["verified_on"] == "2026-10-03"
     defaults = {entry["default"] for entry in snapshot["models"]}
     assert defaults == {
-        "gemini-3.8-flash",
         "gemini-3.1-flash-image",
         "gemini-omni-1.1-flash",
         "gemini-3.5-transcribe",
@@ -632,14 +602,6 @@ def test_catalog_uses_current_models_only():
                 }
             },
             "gemini-3.5-transcribe",
-        ),
-        (
-            "analyze_media",
-            {
-                "prompt": "Describe",
-                "media": [{"type": "image", "mime_type": "image/png", "data": "QQ=="}],
-            },
-            "gemini-3.8-flash",
         ),
     ],
 )

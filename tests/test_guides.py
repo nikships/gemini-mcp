@@ -12,7 +12,7 @@ from fastmcp.exceptions import ToolError
 from aio_gemini import guides, server
 from aio_gemini.catalog import list_media_models
 
-GUIDE_NAMES = ("image", "video", "speech", "music", "transcription", "analysis")
+GUIDE_NAMES = ("image", "video", "speech", "music", "transcription")
 RESOURCES = files("aio_gemini").joinpath("data", "guides")
 MANIFEST = json.loads(RESOURCES.joinpath("sources.json").read_text(encoding="utf-8"))
 
@@ -129,42 +129,6 @@ def test_snapshot_integrity_and_no_bundled_visual_or_sdk_assets(name):
                 "**Provide clean audio:**",
             ],
         ),
-        (
-            "files",
-            [
-                "### Be specific in your instructions",
-                "### Add a few examples",
-                "### Break it down step-by-step",
-                "### Specify the output format",
-                "### Put your image first for single-image prompts",
-                "### Troubleshooting your multimodal prompt",
-            ],
-        ),
-        (
-            "image-understanding",
-            ["Use clear, non-blurry images.", "*before* the image"],
-        ),
-        (
-            "audio",
-            ["Generate a transcript of the speech.", "Provide a transcript from 02:30"],
-        ),
-        (
-            "video-understanding",
-            [
-                "### Choose a processing mode",
-                "### Multi-turn video conversations",
-                "What are the examples given at 00:05 and 00:10 supposed to show us?",
-                "Include timestamps for salient moments.",
-                "**Prompt placement**",
-            ],
-        ),
-        (
-            "document-processing",
-            [
-                "document vision ***only meaningfully understands PDFs***",
-                "Rotate pages to the correct orientation before uploading.",
-            ],
-        ),
     ],
 )
 def test_official_examples_and_sections_preserved(name, phrases):
@@ -185,24 +149,6 @@ def test_separate_api_scope_and_mcp_notes():
     )
     transcription = guides.get_prompt_guide("transcription")
     assert any("no prompt argument" in n for n in transcription.mcp_notes)
-    analysis = guides.get_prompt_guide("analysis")
-    assert len(analysis.sources) == 5
-    assert any("documentation difference" in n for n in analysis.mcp_notes)
-
-
-@pytest.mark.parametrize("media_type", ["image", "audio", "video", "document"])
-def test_analysis_modality_selection(media_type):
-    guide = guides.get_prompt_guide("analysis", media_type)
-    assert len(guide.sources) == 2
-    assert guide.sources[0].url.endswith("/files")
-    assert guide.sources[1].url.endswith(
-        {
-            "image": "/image-understanding",
-            "audio": "/audio",
-            "video": "/video-understanding",
-            "document": "/document-processing",
-        }[media_type]
-    )
 
 
 def test_results_do_not_share_mutable_state():
@@ -242,32 +188,7 @@ async def test_mcp_guide_schema_annotations_and_result(offline):
     offline.assert_not_called()
 
 
-async def test_mcp_analysis_enum_and_invalid_selection():
+async def test_mcp_rejects_unknown_guide():
     async with Client(server.create_server()) as client:
-        tool = next(
-            item
-            for item in await client.list_tools()
-            if item.name == "get_prompt_guide"
-        )
-        selection = tool.input_schema["properties"]["media_type"]
-        assert selection["default"] == "all"
-        assert set(selection["enum"]) == {"all", "image", "audio", "video", "document"}
         with pytest.raises(ToolError, match="guide"):
             await client.call_tool("get_prompt_guide", {"guide": "../other"})
-        with pytest.raises(ToolError, match="media_type"):
-            await client.call_tool(
-                "get_prompt_guide", {"guide": "analysis", "media_type": "../other"}
-            )
-        result = await client.call_tool(
-            "get_prompt_guide", {"guide": "analysis", "media_type": "audio"}
-        )
-        assert result.structured_content == (
-            guides.get_prompt_guide("analysis", "audio").model_dump()
-        )
-
-
-def test_media_type_is_ignored_for_other_guides():
-    assert (
-        guides.get_prompt_guide("music", "audio").model_dump()
-        == guides.get_prompt_guide("music").model_dump()
-    )

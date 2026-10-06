@@ -14,7 +14,6 @@ def media_environment(monkeypatch, tmp_path):
 def sdk_transport(monkeypatch):
     """Run the actual SDK with all network requests intercepted locally."""
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
-    monkeypatch.delenv("GEMINI_MODEL", raising=False)
     real_client = genai.Client
 
     def install(handler):

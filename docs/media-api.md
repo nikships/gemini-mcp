@@ -23,7 +23,6 @@ request serialization, not to decide which model is current.
 | [Gemini 3.8 Flash TTS](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash-tts) | Flagship current TTS and migration from legacy TTS; Lite is the current efficiency tier |
 | [Music generation](https://ai.google.dev/gemini-api/docs/music-generation) | `lyria-3.5` full songs, `lyria-3-clip-preview` short clips, text/images, MP3/WAV |
 | [Background execution](https://ai.google.dev/gemini-api/docs/background-execution) | `background=true`, get/cancel lifecycle, retained state |
-| [Video understanding](https://ai.google.dev/gemini-api/docs/video-understanding) | Gemini 3.8 Flash and `processing: "agentic"` |
 | [Files API reference](https://ai.google.dev/api/files) | Resource names, states, expiration, and generated download URIs |
 
 Task-specific guides and the current model catalog can be ahead of enumerated
@@ -51,8 +50,8 @@ not legacy examples. No automatic fallback is configured.
   earlier interleaved output. Do not echo user input or thought steps.
 - Unary Gemini 3.8 TTS defaults to WAV with an existing RIFF header. Save bytes
   unchanged. Raw L16, mu-law, and A-law must be explicitly requested.
-- The server always sends `store=true` for Interactions generation, analysis,
-  and transcription. No tool exposes a storage toggle. Background execution and
+- The server always sends `store=true` for Interactions generation and
+  transcription. No tool exposes a storage toggle. Background execution and
   continuation use the retained interaction ID.
 
 ## Model-specific limits

@@ -27,9 +27,8 @@ fetches and runs the server from [PyPI](https://pypi.org/project/aio-gemini-mcp/
 }
 ```
 
-Optional `env` entries: `GEMINI_MODEL` (default text model, `gemini-3.8-flash`)
-and `GEMINI_OUTPUT_DIR` (absolute path for saved media). Client configuration
-formats can vary.
+Optional `env` entry: `GEMINI_OUTPUT_DIR` (absolute path for saved media).
+Client configuration formats can vary.
 
 ## Setup
 
@@ -72,46 +71,33 @@ An MCP client should launch it as a subprocess, as in the
 
 | Tool | Purpose |
 | --- | --- |
-| `generate_text` | Create a Gemini interaction and return its ID, status, and text |
 | `generate_image` | Nano Banana image generation and editing, with optional Google Search |
 | `generate_omni` | Omni video generation, editing, extension, and first/last-frame interpolation |
 | `transcribe_audio` | Dedicated speech recognition, smart/verbatim modes, diarization, and word timestamps |
 | `generate_speech` | Single- or two-speaker TTS with voice, language, and delivery style controls |
 | `generate_music` | Lyria songs, instrumental music, clips, lyrics, and image-inspired music |
-| `analyze_media` | Understand images, audio, video (static/agentic), and PDFs |
 | `get_interaction` | Retrieve or poll stored interactions and save inline media |
 | `cancel_interaction` / `delete_interaction` | Explicitly cancel background work or delete stored Google interactions |
 | `upload_file` / `get_file` / `list_files` / `delete_file` | Manage reusable Google Files inputs and processing readiness |
 | `download_file` | Stream an ACTIVE generated Google file to a unique local file |
-| `get_prompt_guide` | Official prompting guide by `guide`: `image`, `video`, `speech`, `music`, `transcription`, or `analysis` |
+| `get_prompt_guide` | Official prompting guide by `guide`: `image`, `video`, `speech`, `music`, or `transcription` |
 
 See [`docs/tools.md`](docs/tools.md) for arguments, defaults, accepted values,
 constraints, and return shapes for every tool.
 
-`generate_text` calls `client.aio.interactions.create`. It accepts `prompt`,
-optional `model`, optional `system_instruction`, `max_output_tokens` (default
-4096, allowed range 1–65536), and optional `previous_interaction_id`. Model-specific
-limits still apply. Set `GEMINI_MODEL` to change the default, `gemini-3.8-flash`,
-or pass `model` per request. Media tool schemas expose their supported model
-choices, but do not report account-specific access.
-
-Generation now returns a structured object, not the old bare text string:
-
-```json
-{"id": "interaction-id", "status": "completed", "text": "Hello!"}
-```
+Media tool schemas expose their supported model choices, but do not report
+account-specific access. Generation returns a structured object with `id`,
+`status`, `text`, and ordered `outputs`.
 
 All Interactions calls are stored with Google automatically. To continue a
 conversation, pass the returned `id` as `previous_interaction_id` on the next
 call. The server does not expose a storage toggle; this does not bypass Google's
-other data policies. System instructions and generation options are supplied on
-each call.
+other data policies. Generation options are supplied on each call.
 
-`generate_text` remains non-streaming and foreground-only. The returned status
-is preserved even if text is empty, rather than reporting an incomplete or
-blocked response as successful text.
+The returned status is preserved even if output is empty, rather than reporting
+an incomplete or blocked response as success.
 
-Text and interaction metadata requests use a 60-second timeout. Media creation,
+Interaction metadata requests use a 60-second timeout. Media creation,
 upload, and download default to 600 seconds, configurable with `timeout_seconds`
 (1–1800). Google requests use asynchronous I/O. Clients
 are closed after each tool call. Upstream error details are redacted from tool
@@ -128,16 +114,7 @@ a media request. It takes a required `guide`:
 {"guide": "music"}
 ```
 
-`guide` is one of `image`, `video`, `speech`, `music`, `transcription`, or
-`analysis`. For `analysis`, an optional `media_type` narrows the guide:
-
-```json
-{"guide": "analysis", "media_type": "document"}
-```
-
-Use `image`, `audio`, `video`, or `document` (PDF), or omit `media_type` for `all`.
-The analysis guide always includes general file-prompting strategies.
-`media_type` is ignored for other guides.
+`guide` is one of `image`, `video`, `speech`, `music`, or `transcription`.
 
 The full guide text is returned in the response, not just a link. Guides return
 closely preserved **official wording, templates, and examples**, not AI-written
@@ -168,7 +145,6 @@ task-specific guides are the source of truth, not remembered model names.
 
 | Capability | Default | Other current choices |
 | --- | --- | --- |
-| Text and media analysis | `gemini-3.8-flash` | Text retains its explicit model/environment override |
 | Images | `gemini-3.1-flash-image` | `gemini-3.1-flash-lite-image`, `gemini-3-pro-image` |
 | Video / Omni | `gemini-omni-1.1-flash` | None |
 | Transcription | `gemini-3.5-transcribe` | None |
@@ -176,12 +152,12 @@ task-specific guides are the source of truth, not remembered model names.
 | Music | `lyria-3.5` | `lyria-3-clip-preview`, the current short-clip specialist |
 
 Media tool model choices are constrained to these current families, with **no
-legacy fallback**. `GEMINI_MODEL` affects only `generate_text`, not media tools.
+legacy fallback**.
 This is a dated snapshot, not automatic model discovery or a promise of account
 access. Model schemas expose the supported choices, not account availability.
 Refresh the catalog from official docs before adding future models.
 
-All generation and analysis calls use `client.aio.interactions.create`.
+All generation calls use `client.aio.interactions.create`.
 There is no `generateContent`, Imagen, or fallback to another video-generation
 API. **Live audio/live transcription**, **Lyria RealTime**, and **voice
 design/replication** use separate APIs and are intentionally outside this

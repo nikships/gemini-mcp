@@ -27,7 +27,6 @@ async def test_real_stdio(entrypoint, mode):
         env={
             "GEMINI_API_KEY": "",
             "GOOGLE_API_KEY": "",
-            "GEMINI_MODEL": "stdio-test-model",
         },
     )
     async with Client(transport, timeout=10, init_timeout=20, mode=mode) as client:
@@ -36,14 +35,12 @@ async def test_real_stdio(entrypoint, mode):
             await client.ping()
         tools = await client.list_tools()
         assert {
-            "generate_text",
             "get_prompt_guide",
             "generate_image",
             "generate_omni",
             "transcribe_audio",
             "generate_speech",
             "generate_music",
-            "analyze_media",
             "get_interaction",
             "cancel_interaction",
             "delete_interaction",
@@ -54,20 +51,14 @@ async def test_real_stdio(entrypoint, mode):
             "download_file",
         } == {tool.name for tool in tools}
         for tool in (
-            "generate_text",
             "generate_image",
             "generate_omni",
             "transcribe_audio",
             "generate_speech",
             "generate_music",
-            "analyze_media",
         ):
             tool_info = next(item for item in tools if item.name == tool)
             assert "store" not in tool_info.input_schema["properties"]
-        generation = next(tool for tool in tools if tool.name == "generate_text")
-        assert "prompt" in generation.input_schema["required"]
-        assert "previous_interaction_id" in generation.input_schema["properties"]
-        assert {"id", "status", "text"} <= set(generation.output_schema["properties"])
         image = next(tool for tool in tools if tool.name == "generate_image")
         assert image.input_schema["properties"]["model"]["default"] == (
             "gemini-3.1-flash-image"
@@ -75,8 +66,6 @@ async def test_real_stdio(entrypoint, mode):
         assert {"id", "status", "text", "outputs"} <= set(
             image.output_schema["properties"]
         )
-        with pytest.raises(ToolError, match="Set GEMINI_API_KEY or GOOGLE_API_KEY"):
-            await client.call_tool("generate_text", {"prompt": "Hello"})
         for tool, arguments in (
             ("generate_image", {"prompt": "A landscape"}),
             ("generate_omni", {"prompt": "A landscape"}),
@@ -93,7 +82,3 @@ async def test_real_stdio(entrypoint, mode):
             "## Lyrics and vocals"
             in (music_guide.structured_content["sources"][0]["markdown"])
         )
-        analysis = await client.call_tool(
-            "get_prompt_guide", {"guide": "analysis", "media_type": "document"}
-        )
-        assert len(analysis.structured_content["sources"]) == 2
