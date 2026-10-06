@@ -1,6 +1,6 @@
 # Media API documentation snapshot
 
-Verified **2026-10-03** with the repository's
+Verified **2026-10-06** with the repository's
 `retrieving-developer-knowledge` skill and the Google Developer Knowledge MCP
 `search_documents` / `get_documents` tools. Model selection comes from these
 retrieved official sources. The installed Google Gen AI SDK is used to verify
@@ -10,10 +10,11 @@ request serialization, not to decide which model is current.
 
 | Source | Decision |
 | --- | --- |
-| [Models](https://ai.google.dev/gemini-api/docs/models) | Current families: Gemini 3.8 Flash/TTS, Nano Banana 2/Lite/Pro, Omni 1.1 Flash, Transcribe 3.5, Lyria 3.5 and the clip specialist |
+| [Models](https://ai.google.dev/gemini-api/docs/models) | Current families: Gemini 3.8 Flash/TTS, Nano Banana 2.1/2/Lite/Pro, Omni 1.1 Flash, Transcribe 3.5, Lyria 3.5 and the clip specialist |
 | [Interactions overview](https://ai.google.dev/gemini-api/docs/interactions-overview) | Interactions is the recommended unified API; `steps` contains model outputs; storage is optional |
 | [Interactions API reference](https://ai.google.dev/api/interactions-api) | Content discriminators, response formats, generation config, and lifecycle endpoints |
 | [Image generation](https://ai.google.dev/gemini-api/docs/image-generation) | Image/reference inputs, multi-turn editing, `response_format`, search grounding |
+| [Nano Banana 2.1](https://ai.google.dev/gemini-api/docs/models/gemini-nano-banana-2.1) | `gemini-nano-banana-2.1`, 1K/2K/4K (no 512), always called with `high` thinking, Web and Image Search grounding |
 | [Nano Banana 2](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image) | `gemini-3.1-flash-image`, 512/1K/2K/4K and additional aspect ratios |
 | [Nano Banana 2 Lite](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite-image) | `gemini-3.1-flash-lite-image`, 1K only, no search grounding |
 | [Omni](https://ai.google.dev/gemini-api/docs/omni) | `gemini-omni-1.1-flash`, multimodal video, edit/extend/interpolate, URI delivery |
@@ -56,7 +57,8 @@ not legacy examples. No automatic fallback is configured.
 
 ## Model-specific limits
 
-- Images: at most 14 reference images. Nano Banana 2 supports 512, 1K, 2K, 4K;
+- Images: at most 14 reference images. Nano Banana 2.1 supports 1K, 2K, 4K;
+  Nano Banana 2 also supports 512;
   Lite supports only 1K and no search. Pro supports 1K, 2K, 4K.
 - Omni: 3–10 second outputs, landscape/portrait, default 720p; 1080p/4K are
   upscaled. Uploaded videos for extension must be at most 10 seconds.

@@ -79,7 +79,7 @@ stored interaction. It uses the current Nano Banana image models.
 | --- | --- | --- | --- |
 | `prompt` | Yes | — | Nonblank image-generation or editing instructions |
 | `media` | No | — | Up to 20 inputs of type `image`, `video`, or `document`; no more than 14 may be images |
-| `model` | No | `gemini-3.1-flash-image` | `gemini-3.1-flash-image`, `gemini-3.1-flash-lite-image`, or `gemini-3-pro-image` |
+| `model` | No | `gemini-nano-banana-2.1` | `gemini-nano-banana-2.1`, `gemini-3.1-flash-image`, `gemini-3.1-flash-lite-image`, or `gemini-3-pro-image` |
 | `aspect_ratio` | No | Model default | One of `1:1`, `2:3`, `3:2`, `3:4`, `4:3`, `4:5`, `5:4`, `9:16`, `16:9`, `21:9`, `1:8`, `8:1`, `1:4`, or `4:1` |
 | `image_size` | No | `1K` | `512`, `1K`, `2K`, or `4K` |
 | `include_text` | No | `true` | Request text alongside generated image output |
@@ -90,8 +90,9 @@ stored interaction. It uses the current Nano Banana image models.
 | `output_directory` | No | `GEMINI_OUTPUT_DIR` or `generated-media/` | Absolute directory for saved inline results |
 | `include_inline_data` | No | `false` | Include output base64 data as well as saving it locally |
 
-Lite supports only `1K` and does not support Google Search. Pro does not support
-`512`. The tool may return multiple images and text blocks.
+Lite supports only `1K` and does not support Google Search. Nano Banana 2.1 and
+Pro do not support `512`. Nano Banana 2.1 always runs at the `high` thinking
+level (sent as `generation_config.thinking_level`); it is not configurable. The tool may return multiple images and text blocks.
 
 ## Video generation
 

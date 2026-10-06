@@ -91,13 +91,14 @@ async def test_image_real_sdk_keeps_every_output(api, tmp_path):
         previous_interaction_id="prior",
     )
     body = request_body(requests)
-    assert body["model"] == "gemini-3.1-flash-image"
+    assert body["model"] == "gemini-nano-banana-2.1"
     assert body["input"][0]["content"][0]["data"] == encoded(b"reference")
     assert body["response_format"] == [
         {"type": "text"},
         {"type": "image", "aspect_ratio": "16:9", "image_size": "2K"},
     ]
     assert body["tools"] == [{"type": "google_search"}]
+    assert body["generation_config"] == {"thinking_level": "high"}
     assert body["previous_interaction_id"] == "prior"
     assert body["store"] is True
     assert result.text == "First\nSecond"
@@ -511,6 +512,7 @@ async def test_output_failure_is_redacted(tmp_path, monkeypatch):
             "generate_image",
             {"prompt": "x", "model": "gemini-3-pro-image", "image_size": "512"},
         ),
+        ("generate_image", {"prompt": "x", "image_size": "512"}),
         ("generate_omni", {"prompt": "x", "model": "veo-3.1-generate-preview"}),
         ("generate_omni", {"prompt": "x", "duration_seconds": 2}),
         ("generate_omni", {"prompt": "x", "task": "extend"}),
@@ -573,10 +575,10 @@ async def test_invalid_requests_never_contact_google(sdk_transport, tool, argume
 
 def test_catalog_uses_current_models_only():
     snapshot = catalog.list_media_models()
-    assert snapshot["verified_on"] == "2026-10-03"
+    assert snapshot["verified_on"] == "2026-10-06"
     defaults = {entry["default"] for entry in snapshot["models"]}
     assert defaults == {
-        "gemini-3.1-flash-image",
+        "gemini-nano-banana-2.1",
         "gemini-omni-1.1-flash",
         "gemini-3.5-transcribe",
         "gemini-3.8-flash-tts",
@@ -588,7 +590,7 @@ def test_catalog_uses_current_models_only():
 @pytest.mark.parametrize(
     "tool, arguments, model",
     [
-        ("generate_image", {"prompt": "A tree"}, "gemini-3.1-flash-image"),
+        ("generate_image", {"prompt": "A tree"}, "gemini-nano-banana-2.1"),
         ("generate_omni", {"prompt": "A scene"}, "gemini-omni-1.1-flash"),
         ("generate_speech", {"text": "Hello"}, "gemini-3.8-flash-tts"),
         ("generate_music", {"prompt": "A jazz song"}, "lyria-3.5"),

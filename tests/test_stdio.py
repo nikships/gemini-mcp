@@ -61,7 +61,7 @@ async def test_real_stdio(entrypoint, mode):
             assert "store" not in tool_info.input_schema["properties"]
         image = next(tool for tool in tools if tool.name == "generate_image")
         assert image.input_schema["properties"]["model"]["default"] == (
-            "gemini-3.1-flash-image"
+            "gemini-nano-banana-2.1"
         )
         assert {"id", "status", "text", "outputs"} <= set(
             image.output_schema["properties"]

@@ -124,7 +124,7 @@ include `retrieved_on`, related tools, supported models, Google attribution,
 the CC BY 4.0 license link, and separate `mcp_notes` explaining how the guidance
 maps to this server.
 
-This is a bundled **2026-10-03 documentation snapshot**, not a live lookup.
+This is a bundled **2026-10-06 documentation snapshot**, not a live lookup.
 Unrelated API code and illustrative media are omitted. The music guide preserves
 the batch-generation sections of Google's
 [Lyria prompt guide](https://ai.google.dev/gemini-api/docs/lyria-prompt-guide),
@@ -138,14 +138,14 @@ snapshot boundaries, and refresh instructions.
 
 ## Media models and API boundaries
 
-Model IDs and request formats were verified on **2026-10-03** using the
+Model IDs and request formats were verified on **2026-10-06** using the
 `retrieving-developer-knowledge` skill and Google Developer Knowledge MCP.
 The [official model catalog](https://ai.google.dev/gemini-api/docs/models) and
 task-specific guides are the source of truth, not remembered model names.
 
 | Capability | Default | Other current choices |
 | --- | --- | --- |
-| Images | `gemini-3.1-flash-image` | `gemini-3.1-flash-lite-image`, `gemini-3-pro-image` |
+| Images | `gemini-nano-banana-2.1` | `gemini-3.1-flash-image`, `gemini-3.1-flash-lite-image`, `gemini-3-pro-image` |
 | Video / Omni | `gemini-omni-1.1-flash` | None |
 | Transcription | `gemini-3.5-transcribe` | None |
 | TTS | `gemini-3.8-flash-tts` | `gemini-3.8-flash-lite-tts` |

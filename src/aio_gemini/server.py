@@ -163,9 +163,12 @@ async def generate_image(
     """Generate or edit images with Nano Banana.
 
     Supply reference images, videos, or PDFs, or continue a stored interaction.
-    Lite supports only 1K and no Google Search.
+    Lite supports only 1K and no Google Search. Nano Banana 2.1 and Pro do not
+    support 512. Nano Banana 2.1 always runs at the highest thinking level.
     """
     _not_blank(prompt, "prompt")
+    if model == "gemini-nano-banana-2.1" and image_size == "512":
+        raise ToolError("Nano Banana 2.1 supports 1K, 2K, or 4K, not 512.")
     if model == "gemini-3.1-flash-lite-image":
         if image_size != "1K" or google_search:
             raise ToolError("Nano Banana 2 Lite supports only 1K and no Google Search.")
@@ -186,6 +189,9 @@ async def generate_image(
         response_format=[{"type": "text"}, image_format]
         if include_text
         else image_format,
+        generation_config={"thinking_level": "high"}
+        if model == "gemini-nano-banana-2.1"
+        else None,
         previous_interaction_id=previous_interaction_id,
         background=background,
         timeout_seconds=timeout_seconds,

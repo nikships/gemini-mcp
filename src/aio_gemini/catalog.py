@@ -2,15 +2,18 @@
 
 from typing import Literal, get_args
 
-DOCS_VERIFIED_ON = "2026-10-03"
-DEFAULT_IMAGE_MODEL = "gemini-3.1-flash-image"
+DOCS_VERIFIED_ON = "2026-10-06"
+DEFAULT_IMAGE_MODEL = "gemini-nano-banana-2.1"
 DEFAULT_OMNI_MODEL = "gemini-omni-1.1-flash"
 DEFAULT_TRANSCRIBE_MODEL = "gemini-3.5-transcribe"
 DEFAULT_TTS_MODEL = "gemini-3.8-flash-tts"
 DEFAULT_MUSIC_MODEL = "lyria-3.5"
 
 ImageModel = Literal[
-    "gemini-3.1-flash-image", "gemini-3.1-flash-lite-image", "gemini-3-pro-image"
+    "gemini-nano-banana-2.1",
+    "gemini-3.1-flash-image",
+    "gemini-3.1-flash-lite-image",
+    "gemini-3-pro-image",
 ]
 OmniModel = Literal["gemini-omni-1.1-flash"]
 TranscribeModel = Literal["gemini-3.5-transcribe"]
