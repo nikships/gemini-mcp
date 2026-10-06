@@ -15,25 +15,9 @@ network access, or the repository's working directory.
 | `speech` | [Speech generation](https://ai.google.dev/gemini-api/docs/speech-generation), the full prompting guide: verbatim transcripts, styles, pauses, prosody, vocal tags, overlaps, consistency, and workflows |
 | `music` | [Lyria prompt guide](https://ai.google.dev/gemini-api/docs/lyria-prompt-guide), all batch/shared prompting sections and Lyria 3.5 examples; [Music generation](https://ai.google.dev/gemini-api/docs/music-generation), best practices |
 | `transcription` | [Transcription](https://ai.google.dev/gemini-api/docs/transcribe), overview, language hints, vocabulary, diarization, timestamps, modes, and best practices |
-| `analysis` | [Files](https://ai.google.dev/gemini-api/docs/files#prompt-guide), the full file-prompting strategies section, plus modality-specific sources below |
 
 All guides are served by the single `get_prompt_guide` tool, which takes a
-required `guide` argument. With `guide: "analysis"`, an optional `media_type` of
-`"all"` (default), `"image"`, `"audio"`, `"video"`, or `"document"` selects the
-modality sources; it is ignored for other guides. General Files guidance is always included.
-Selected modality-specific sources:
-
-- [Image understanding](https://ai.google.dev/gemini-api/docs/image-understanding):
-  tips and best practices.
-- [Audio understanding](https://ai.google.dev/gemini-api/docs/audio): overview,
-  transcript prompting, timestamp prompting, and technical details. Exact prompt
-  strings are extracted from SDK samples into standalone text blocks.
-- [Video understanding](https://ai.google.dev/gemini-api/docs/video-understanding):
-  static/agentic mode selection, conversation context, timestamp and detailed
-  insight prompting, and technical details. Exact prompt strings are extracted
-  into standalone text blocks.
-- [Document understanding](https://ai.google.dev/gemini-api/docs/document-processing):
-  introduction, PDF-versus-text behavior, and page-quality best practices.
+required `guide` argument.
 
 Every result includes `sources[].markdown`, page titles/URLs, selected sections,
 disclosed modifications, `retrieved_on`, related tools, current model choices,
@@ -62,13 +46,6 @@ Transcribe is a configuration-driven ASR model with no free-form prompt argument
 Its guide does not invent a prompt interface. The notes map its API configuration
 to `transcribe_audio` arguments and explain incompatible options.
 
-The retrieved image-understanding page recommends text before a single image,
-while the Files guide recommends image first. Both statements remain unchanged.
-The notes flag this discrepancy and state that `analyze_media` places media
-before text. The Files guide also discusses sampling controls that
-`analyze_media` does not expose. Video examples mention streaming and stateless
-histories; this MCP instead supports stored continuation and background polling.
-
 Model lists in `PromptGuide.models` come from the current server catalog. Older
 model names or other API capabilities in quoted source text are not model
 fallbacks or promises of MCP support. The snapshots do not update automatically.
@@ -90,7 +67,7 @@ media assets.
 
 ## Refreshing the snapshots
 
-1. Retrieve the eleven source pages above with Developer Knowledge
+1. Retrieve the six source pages above with Developer Knowledge
    `get_documents`, using resource names such as
    `documents/ai.google.dev/gemini-api/docs/lyria-prompt-guide`.
 2. Save the returned JSON exports locally. Each export must have the tool's

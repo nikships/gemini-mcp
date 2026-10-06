@@ -32,26 +32,21 @@ async def test_real_sdk_posts_interactions(sdk_transport):
         )
 
     sdk_transport(handle)
-    result = await server.generate_text(
+    result = await server.generate_image(
         "Say hello",
-        system_instruction="Be brief",
-        max_output_tokens=123,
         previous_interaction_id="prior-turn",
     )
-    assert result.model_dump() == {
-        "id": "real-sdk-id",
-        "status": "completed",
-        "text": "Hello!",
-    }
+    assert (result.id, result.status, result.text) == (
+        "real-sdk-id",
+        "completed",
+        "Hello\n!",
+    )
     assert len(requests) == 1
     request = requests[0]
     assert request.method == "POST"
     assert request.url.path.endswith("/interactions")
     body = json.loads(request.content)
-    assert body["model"] == server.DEFAULT_MODEL
-    assert body["input"] == "Say hello"
-    assert body["system_instruction"] == "Be brief"
-    assert body["generation_config"]["max_output_tokens"] == 123
+    assert body["model"] == server.DEFAULT_IMAGE_MODEL
     assert body["previous_interaction_id"] == "prior-turn"
     assert body["store"] is True
     assert body["stream"] is False
@@ -67,12 +62,12 @@ async def test_real_sdk_error_is_redacted(sdk_transport):
 
     sdk_transport(handle)
     with pytest.raises(ToolError, match="HTTP 400") as exc:
-        await server.generate_text("Hello")
+        await server.generate_image("Hello")
     assert "sensitive-upstream-detail" not in str(exc.value)
 
 
 @pytest.mark.parametrize("status", [429, 500, 503])
-@pytest.mark.parametrize("tool", [server.generate_text, server.generate_image])
+@pytest.mark.parametrize("tool", [server.generate_image, server.generate_speech])
 async def test_generation_errors_do_not_retry_or_fallback(sdk_transport, status, tool):
     requests = []
 

@@ -3,7 +3,6 @@
 from typing import Literal, get_args
 
 DOCS_VERIFIED_ON = "2026-10-03"
-DEFAULT_MODEL = "gemini-3.8-flash"
 DEFAULT_IMAGE_MODEL = "gemini-3.1-flash-image"
 DEFAULT_OMNI_MODEL = "gemini-omni-1.1-flash"
 DEFAULT_TRANSCRIBE_MODEL = "gemini-3.5-transcribe"
@@ -34,7 +33,6 @@ def list_media_models() -> dict[str, object]:
                 "documentation": f"https://ai.google.dev/gemini-api/docs/{guide}",
             }
             for tool, default, models, guide in (
-                ("analyze_media", DEFAULT_MODEL, [DEFAULT_MODEL], "models"),
                 (
                     "generate_image",
                     DEFAULT_IMAGE_MODEL,

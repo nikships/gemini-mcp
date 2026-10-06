@@ -12,7 +12,7 @@ from aio_gemini import server
 
 @pytest.fixture(autouse=True)
 def clean_environment(monkeypatch):
-    for name in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GEMINI_MODEL"):
+    for name in ("GEMINI_API_KEY", "GOOGLE_API_KEY"):
         monkeypatch.delenv(name, raising=False)
 
 
@@ -57,81 +57,48 @@ def google(monkeypatch):
     )
 
 
-def test_model_environment(monkeypatch):
-    monkeypatch.setenv("GEMINI_MODEL", " custom-model ")
-    assert server._default_model() == "custom-model"
-    monkeypatch.setenv("GEMINI_MODEL", " ")
-    assert server._default_model() == server.DEFAULT_MODEL
-
-
-async def test_generate_text_and_cleanup(google):
-    result = await server.generate_text("Say hello")
-    assert result.model_dump() == {
-        "id": "interaction-123",
-        "status": "completed",
-        "text": "Hello!",
-    }
+async def test_client_cleanup(google):
+    result = await server.generate_image("Draw a cat")
+    assert result.id == "interaction-123"
+    assert result.status == "completed"
+    assert result.text == "Hello!"
     kwargs = google.interactions.create.call_args.kwargs
-    assert kwargs["model"] == server.DEFAULT_MODEL
-    assert kwargs["input"] == "Say hello"
-    assert kwargs["generation_config"] == {"max_output_tokens": 4096}
     assert kwargs["store"] is True
     assert kwargs["stream"] is False
     assert kwargs["background"] is False
-    assert kwargs["timeout"] == 60
     assert kwargs["previous_interaction_id"] is None
     google.models.generate_content.assert_not_awaited()
-    assert google.factory.call_args.kwargs["http_options"].timeout == 60_000
+    assert google.factory.call_args.kwargs["http_options"].timeout == 600_000
     assert google.factory.call_args.kwargs["vertexai"] is False
     assert google.factory.call_args.kwargs["enterprise"] is False
     google.aio.__aexit__.assert_awaited_once()
     google.sync.__exit__.assert_called_once()
 
 
-async def test_generation_options(google, monkeypatch):
-    monkeypatch.setenv("GEMINI_MODEL", "env-model")
-    await server.generate_text("Hello")
-    assert google.interactions.create.call_args.kwargs["model"] == "env-model"
-    await server.generate_text(
-        "Hello",
-        model="other-model",
-        system_instruction="Be brief",
-        max_output_tokens=123,
-        previous_interaction_id=" previous-123 ",
-    )
-    kwargs = google.interactions.create.call_args.kwargs
-    assert kwargs["model"] == "other-model"
-    assert kwargs["system_instruction"] == "Be brief"
-    assert kwargs["generation_config"] == {"max_output_tokens": 123}
-    assert kwargs["previous_interaction_id"] == "previous-123"
-    assert kwargs["store"] is True
-
-
 async def test_api_key_precedence_and_fallback(google, monkeypatch):
     monkeypatch.setenv("GOOGLE_API_KEY", "fallback-key")
-    await server.generate_text("Hello")
+    await server.generate_image("Hello")
     assert google.factory.call_args.kwargs["api_key"] == "test-key"
     monkeypatch.setenv("GEMINI_API_KEY", " ")
-    await server.generate_text("Hello")
+    await server.generate_image("Hello")
     assert google.factory.call_args.kwargs["api_key"] == "fallback-key"
 
 
 async def test_missing_key():
     with pytest.raises(ToolError, match="Set GEMINI_API_KEY or GOOGLE_API_KEY"):
-        await server.generate_text("Hello")
+        await server.generate_image("Hello")
 
 
 @pytest.mark.parametrize(
     "kwargs",
     [
         {"prompt": " "},
-        {"prompt": "Hi", "model": " "},
         {"prompt": "Hi", "previous_interaction_id": " "},
     ],
 )
 async def test_blank_inputs(google, kwargs):
     with pytest.raises(ToolError, match="must not be blank"):
-        await server.generate_text(**kwargs)
+        await server.generate_image(**kwargs)
     google.factory.assert_not_called()
 
 
@@ -139,19 +106,19 @@ async def test_no_text_response_preserves_metadata(google):
     google.interactions.create.return_value = interactions.Interaction(
         id="empty-interaction", status="completed"
     )
-    result = await server.generate_text("Hello")
-    assert result.model_dump() == {
-        "id": "empty-interaction",
-        "status": "completed",
-        "text": "",
-    }
+    result = await server.generate_image("Hello")
+    assert (result.id, result.status, result.text) == (
+        "empty-interaction",
+        "completed",
+        "",
+    )
 
 
 async def test_incomplete_response_status(google):
     google.interactions.create.return_value = interactions.Interaction(
         id="partial-interaction", status="incomplete"
     )
-    assert (await server.generate_text("Hello")).status == "incomplete"
+    assert (await server.generate_image("Hello")).status == "incomplete"
 
 
 async def test_api_errors_are_redacted(google):
@@ -164,7 +131,7 @@ async def test_api_errors_are_redacted(google):
         body={"sensitive": "upstream-detail"},
     )
     with pytest.raises(ToolError, match="HTTP 429") as exc:
-        await server.generate_text("Hello")
+        await server.generate_image("Hello")
     assert "sensitive-upstream-detail" not in str(exc.value)
     assert exc.value.__suppress_context__
     google.aio.__aexit__.assert_awaited_once()
@@ -174,22 +141,20 @@ async def test_api_errors_are_redacted(google):
 async def test_network_error_is_redacted(google):
     google.interactions.create.side_effect = httpx.ConnectError("sensitive-request-url")
     with pytest.raises(ToolError, match="Could not reach") as exc:
-        await server.generate_text("Hello")
+        await server.generate_image("Hello")
     assert "sensitive-request-url" not in str(exc.value)
 
 
 async def test_mcp_discovery_and_generation(google):
     async with Client(server.create_server()) as client:
-        tools = await client.list_tools()
-        assert "generate_text" in {tool.name for tool in tools}
-        result = await client.call_tool("generate_text", {"prompt": "Hi"})
-        assert result.structured_content == {
-            "id": "interaction-123",
-            "status": "completed",
-            "text": "Hello!",
-        }
+        names = {tool.name for tool in await client.list_tools()}
+        assert "generate_image" in names
+        assert "generate_text" not in names
+        result = await client.call_tool("generate_image", {"prompt": "Hi"})
+        assert result.structured_content["id"] == "interaction-123"
+        assert result.structured_content["text"] == "Hello!"
         await client.call_tool(
-            "generate_text",
+            "generate_image",
             {
                 "prompt": "Continue",
                 "previous_interaction_id": result.data.id,
@@ -218,7 +183,7 @@ async def test_interactions_errors_are_redacted(google, kind):
         )
     google.interactions.create.side_effect = error
     with pytest.raises(ToolError) as exc:
-        await server.generate_text("Hello")
+        await server.generate_image("Hello")
     assert "sensitive-upstream-detail" not in str(exc.value)
     assert exc.value.__suppress_context__
     google.aio.__aexit__.assert_awaited_once()
@@ -229,16 +194,13 @@ async def test_interactions_errors_are_redacted(google, kind):
     "arguments",
     [
         {"prompt": ""},
-        {"prompt": "Hi", "max_output_tokens": 0},
-        {"prompt": "Hi", "max_output_tokens": 65_537},
-        {"prompt": "Hi", "model": ""},
         {"prompt": "Hi", "previous_interaction_id": ""},
     ],
 )
 async def test_mcp_input_validation(google, arguments):
     async with Client(server.create_server()) as client:
         with pytest.raises(ToolError):
-            await client.call_tool("generate_text", arguments)
+            await client.call_tool("generate_image", arguments)
     google.interactions.create.assert_not_awaited()
 
 

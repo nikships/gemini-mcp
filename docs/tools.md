@@ -6,7 +6,7 @@ are JSON objects supplied by an MCP client. Tools that call Google require
 generation and file operations may incur charges. The guide tool is local and
 does not require a key.
 
-The server uses Google's Interactions API for generation and analysis. It does
+The server uses Google's Interactions API for generation. It does
 not silently switch to a different API or legacy model. The media model catalog
 is a dated snapshot. Media tool schemas show supported model IDs, but this
 server does not expose account-specific model availability.
@@ -29,12 +29,9 @@ PDFs). The MIME type must match the type, for example `image/png`,
 local-file and base64 media in one request to 10 MiB. Use `upload_file` for
 larger files, then pass the returned `uri` and `mime_type` to a media tool.
 
-Video inputs may also set `processing` to `static` or `agentic`. This option is
-only valid for video and is used by `analyze_media`.
-
 ### Media results and generated files
 
-Media generation and analysis return a `MediaResult`:
+Media generation returns a `MediaResult`:
 
 | Field | Meaning |
 | --- | --- |
@@ -59,36 +56,17 @@ poll it with `get_file` until `ACTIVE`, then use `download_file`.
 
 ### Stored and background interactions
 
-The server always asks Google to store created interactions, including text,
-media generation, analysis, and transcription. No tool exposes a storage toggle.
+The server always asks Google to store created interactions, including
+media generation and transcription. No tool exposes a storage toggle.
 Use the returned `id` with `get_interaction` to poll background work. Pass an
 interaction ID as `previous_interaction_id` to continue where supported.
 Options such as output format, voice, and search grounding apply to that call
 and should be repeated on later turns when needed. The server does not
 automatically retry generation requests.
 
-Timeouts default to 60 seconds for text and interaction metadata
+Timeouts default to 60 seconds for interaction metadata
 requests, and 600 seconds for media creation and file transfers. Tools exposing
 `timeout_seconds` accept values from 1 through 1800.
-
-## Text generation
-
-### `generate_text`
-
-Creates one non-streaming text interaction with Gemini. It can use a stored
-previous interaction for conversational continuation.
-
-| Argument | Required | Default | Description |
-| --- | --- | --- | --- |
-| `prompt` | Yes | — | Nonblank text sent to Gemini |
-| `model` | No | `GEMINI_MODEL` or `gemini-3.8-flash` | Model ID; must not be blank |
-| `system_instruction` | No | — | System-level instruction |
-| `max_output_tokens` | No | `4096` | Output-token limit, 1–65,536 |
-| `previous_interaction_id` | No | — | Stored interaction to continue |
-**Returns:** `id`, `status`, and `text`. Interactions are always stored with
-Google. Status is preserved even if the result has no text. Text generation uses
-a 60-second timeout and has no
-`timeout_seconds` argument.
 
 ## Image generation
 
@@ -149,8 +127,7 @@ responses; it does not save or download the URI content.
 ### `transcribe_audio`
 
 Transcribes one audio input with Google's dedicated Transcribe model. This is
-configuration-based ASR and has no free-form prompt argument. For open-ended
-questions about audio, use `analyze_media`.
+configuration-based ASR and has no free-form prompt argument.
 
 | Argument | Required | Default | Description |
 | --- | --- | --- | --- |
@@ -218,27 +195,6 @@ prompt instructions, not separate tool arguments.
 
 The clip model supports MP3 only; WAV requires `lyria-3.5`. This is batch
 generation, not the separate Lyria RealTime API.
-
-## Media analysis
-
-### `analyze_media`
-
-Answers a prompt about one or more images, audio clips, videos, or PDFs using
-Gemini Flash. It uses Interactions and returns text plus output metadata. For
-dedicated audio transcription, use `transcribe_audio`.
-
-| Argument | Required | Default | Description |
-| --- | --- | --- | --- |
-| `prompt` | Yes | — | Nonblank question or analysis instructions |
-| `media` | Yes | — | 1–20 image, audio, video, or document inputs |
-| `system_instruction` | No | — | System-level analysis instruction |
-| `max_output_tokens` | No | `4096` | Output-token limit, 1–65,536 |
-| `previous_interaction_id` | No | — | Stored interaction to continue |
-| `background` | No | `false` | Run as background work; the interaction is retained automatically for polling |
-| `timeout_seconds` | No | `600` | Request timeout, 1–1800 seconds |
-
-Video media may specify `processing: "static"` or `"agentic"`. This tool uses
-the current default Gemini model and does not expose a model-selection argument.
 
 ## Interaction lifecycle
 
@@ -358,17 +314,14 @@ Guide results include `title`, `related_tools`, `models`, `retrieved_on`,
 `sources` (title, URL, selected sections, modifications, and Markdown),
 `attribution`, `license`, `license_url`, and `mcp_notes`.
 
-`get_prompt_guide` selects the offline guide by task. The `guide` argument is
-required; `media_type` is used only for the `analysis` guide.
+`get_prompt_guide` selects the offline guide by task.
 
 | Argument | Required | Default | Description |
 | --- | --- | --- | --- |
-| `guide` | Yes | — | `image`, `video`, `speech`, `music`, `transcription`, or `analysis` |
-| `media_type` | No | `all` | For `analysis`, choose `all`, `image`, `audio`, `video`, or `document` (PDF). General Files guidance is included for every selection; this argument is ignored for other guide types. |
+| `guide` | Yes | — | `image`, `video`, `speech`, `music`, or `transcription` |
 
 The guide covers Nano Banana image generation/editing, Omni video generation and
-editing, Gemini TTS, Lyria music, audio transcription, or multimodal analysis,
-depending on `guide`. Results include `related_tools`, supported `models`,
+editing, Gemini TTS, Lyria music, or audio transcription, depending on `guide`. Results include `related_tools`, supported `models`,
 `retrieved_on`, attributed source excerpts and links, modification notes,
 license details, and separate MCP usage notes.
 

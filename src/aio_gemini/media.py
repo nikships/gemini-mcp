@@ -62,7 +62,6 @@ class MediaInput(BaseModel):
         None
     )
     uri: NonBlank | None = None
-    processing: Literal["static", "agentic"] | None = None
 
     @field_validator("mime_type", "path", "uri")
     @classmethod
@@ -77,8 +76,6 @@ class MediaInput(BaseModel):
             raise ValueError("Provide exactly one of path, data, or uri.")
         if self.path is not None and not Path(self.path).is_absolute():
             raise ValueError("path must be absolute.")
-        if self.processing is not None and self.type != "video":
-            raise ValueError("processing is only supported for video.")
         prefix = "application/" if self.type == "document" else f"{self.type}/"
         if not self.mime_type.startswith(prefix):
             raise ValueError("mime_type must match the media type.")
@@ -206,8 +203,6 @@ async def media_contents(
             raise ToolError(
                 "Total inline media exceeds 10 MiB. Use upload_file and uri."
             )
-        if item.processing is not None:
-            block["processing"] = item.processing
         contents.append(block)
     return contents
 

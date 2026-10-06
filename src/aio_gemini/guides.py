@@ -7,7 +7,6 @@ from typing import Literal, get_args
 from pydantic import BaseModel
 
 from aio_gemini.catalog import (
-    DEFAULT_MODEL,
     ImageModel,
     MusicModel,
     OmniModel,
@@ -15,8 +14,7 @@ from aio_gemini.catalog import (
     TranscribeModel,
 )
 
-AnalysisMedia = Literal["all", "image", "audio", "video", "document"]
-GuideName = Literal["image", "video", "speech", "music", "transcription", "analysis"]
+GuideName = Literal["image", "video", "speech", "music", "transcription"]
 
 
 class GuideSource(BaseModel):
@@ -159,8 +157,7 @@ def _transcription_guide() -> PromptGuide:
         ["transcribe"],
         [
             "transcribe_audio has no prompt argument. Use language_codes, "
-            "custom_vocabulary, mode, diarization, and word_timestamps to steer ASR. "
-            "Use analyze_media for open-ended questions about audio.",
+            "custom_vocabulary, mode, diarization, and word_timestamps to steer ASR.",
             "MCP booleans diarization and word_timestamps map to Google's nested "
             "verbatim-mode configuration. Smart mode cannot use either feature.",
             "Custom vocabulary cannot be combined with diarization or word timestamps.",
@@ -170,55 +167,12 @@ def _transcription_guide() -> PromptGuide:
     )
 
 
-def _analysis_guide(media_type: AnalysisMedia) -> PromptGuide:
-    source_names = {
-        "image": "image-understanding",
-        "audio": "audio",
-        "video": "video-understanding",
-        "document": "document-processing",
-    }
-    selected = (
-        list(source_names.values())
-        if media_type == "all"
-        else [source_names[media_type]]
-    )
-    return _guide(
-        f"Media analysis ({media_type})",
-        ["analyze_media"],
-        [DEFAULT_MODEL],
-        ["files", *selected],
-        [
-            "Supply prompt and media items typed image, audio, video, or document. "
-            "Use transcribe_audio for dedicated speech recognition.",
-            "analyze_media places media before the text prompt. The official "
-            "image-understanding page recommends text first, while the Files guide "
-            "recommends image first. Both are preserved without silently reconciling "
-            "this documentation difference; the MCP does not expose ordering.",
-            "Set processing to agentic or static on a video media item. For long "
-            "work use background=true, then poll get_interaction. "
-            "This MCP does not stream or accept stateless step_list histories.",
-            "The Files guide mentions temperature and top-k tuning; analyze_media "
-            "does not expose those parameters. max_output_tokens controls the "
-            "output bound, not sampling.",
-            "Local/base64 inputs share a 10 MiB MCP limit. For larger files use "
-            "upload_file, poll get_file until ACTIVE, and pass uri and mime_type.",
-            "Illustrative images are omitted. Examples referring to a pictured "
-            "object require the corresponding image on the official source page.",
-        ],
-    )
-
-
-def get_prompt_guide(
-    guide: GuideName, media_type: AnalysisMedia = "all"
-) -> PromptGuide:
+def get_prompt_guide(guide: GuideName) -> PromptGuide:
     """Read Google's official prompting guide for a media task.
 
-    media_type narrows the analysis guide and is ignored for other guides.
     Returns the full guide text in sources[].markdown, plus source URLs and
     attribution. Offline near-verbatim snapshot; needs no API key.
     """
-    if guide == "analysis":
-        return _analysis_guide(media_type)
     return {
         "image": _image_guide,
         "video": _video_guide,

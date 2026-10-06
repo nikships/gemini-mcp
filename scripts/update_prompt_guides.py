@@ -38,16 +38,6 @@ def normalize_spacing(text: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", text).strip() + "\n"
 
 
-def with_prompt_example(text: str, start: str, end: str) -> str:
-    """Retain section prose and the first exact prompt, without copying SDK code."""
-    selected = section(text, start, end)
-    prose = selected.split("### Python\n", 1)[0].strip()
-    prompt = re.search(r'(?:"text"\s*:|prompt\s*=)\s*"([^"\n]+)"', selected)
-    if prompt is None:
-        raise ValueError(f"No prompt example found for {start}")
-    return f"{prose}\n\n```\n{prompt[1]}\n```"
-
-
 def extract(documents: dict[str, dict], retrieved_on: str) -> dict:
     manifest = {
         "retrieved_on": retrieved_on,
@@ -170,105 +160,6 @@ def extract(documents: dict[str, dict], retrieved_on: str) -> dict:
         [start.removeprefix("## ") for start, _ in asr_headings],
         "\n\n".join(without_sdk_samples(section(asr, a, b)) for a, b in asr_headings),
         ["Omitted SDK code samples; configuration guidance is preserved."],
-    )
-    save(
-        "files",
-        ["File prompting strategies"],
-        without_images(
-            section(
-                documents["files"]["content"],
-                "## File prompting strategies",
-                "## What's next",
-            )
-        ),
-        [
-            "Omitted illustrative image embeds; example prompts and responses "
-            "are preserved."
-        ],
-    )
-    save(
-        "image-understanding",
-        ["Tips and best practices"],
-        section(
-            documents["image-understanding"]["content"],
-            "## Tips and best practices",
-            "## What's next",
-        ),
-        [],
-    )
-    audio = documents["audio"]["content"]
-    save(
-        "audio",
-        [
-            "Overview",
-            "Get a transcript",
-            "Refer to timestamps",
-            "Technical details about audio",
-        ],
-        "\n\n".join(
-            [
-                section(audio, "## Overview", "## Transcribe speech to text"),
-                with_prompt_example(
-                    audio, "## Get a transcript", "## Refer to timestamps"
-                ),
-                with_prompt_example(audio, "## Refer to timestamps", "## Count tokens"),
-                section(audio, "## Technical details about audio", "## What's next"),
-            ]
-        ),
-        [
-            "Extracted exact prompt strings from SDK samples into standalone "
-            "text blocks."
-        ],
-    )
-    video = documents["video-understanding"]["content"]
-    save(
-        "video-understanding",
-        [
-            "Agentic video understanding",
-            "Choose a processing mode",
-            "Multi-turn video conversations",
-            "Refer to timestamps in the content",
-            "Extract detailed insights from video",
-            "Technical details about videos",
-        ],
-        "\n\n".join(
-            [
-                section(
-                    video,
-                    "## Agentic video understanding",
-                    "### Set the processing mode",
-                ),
-                section(
-                    video,
-                    "### Multi-turn video conversations",
-                    "## Refer to timestamps in the content",
-                ),
-                with_prompt_example(
-                    video,
-                    "## Refer to timestamps in the content",
-                    "## Extract detailed insights from video",
-                ),
-                with_prompt_example(
-                    video,
-                    "## Extract detailed insights from video",
-                    "## Customize video processing",
-                ),
-                section(video, "## Technical details about videos", "## What's next"),
-            ]
-        ),
-        [
-            "Extracted exact prompt strings from SDK samples into standalone "
-            "text blocks."
-        ],
-    )
-    document = documents["document-processing"]["content"]
-    save(
-        "document-processing",
-        ["Introduction", "Document types", "Best practices"],
-        document[: document.index("## Passing PDF data inline")].strip()
-        + "\n\n"
-        + section(document, "### Document types", "## What's next"),
-        [],
     )
     OUTPUT.mkdir(parents=True, exist_ok=True)
     for name, markdown in excerpts.items():

@@ -17,7 +17,6 @@ from pydantic import BaseModel, Field
 
 from aio_gemini.catalog import (
     DEFAULT_IMAGE_MODEL,
-    DEFAULT_MODEL,
     DEFAULT_MUSIC_MODEL,
     DEFAULT_OMNI_MODEL,
     DEFAULT_TRANSCRIBE_MODEL,
@@ -52,18 +51,6 @@ from aio_gemini.media import (
 
 Timeout = Annotated[int, Field(ge=1, le=1800)]
 MediaList = Annotated[list[MediaInput], Field(max_length=20)]
-
-
-class InteractionResult(BaseModel):
-    """Text and metadata returned by Google's Interactions API."""
-
-    id: str
-    status: str
-    text: str
-
-
-def _default_model() -> str:
-    return os.getenv("GEMINI_MODEL", "").strip() or DEFAULT_MODEL
 
 
 @asynccontextmanager
@@ -113,49 +100,6 @@ async def _google_client(
             f"Google Gen AI request failed (HTTP {exc.code}). "
             "Check your API key, model access, and quota."
         ) from None
-
-
-async def generate_text(
-    prompt: Annotated[str, Field(min_length=1)],
-    model: Annotated[str | None, Field(min_length=1)] = None,
-    system_instruction: str | None = None,
-    max_output_tokens: Annotated[int, Field(ge=1, le=65_536)] = 4096,
-    previous_interaction_id: Annotated[str | None, Field(min_length=1)] = None,
-) -> InteractionResult:
-    """Generate text with Gemini.
-
-    Uses GEMINI_MODEL (or the server default) unless model is supplied.
-    """
-    if not prompt.strip():
-        raise ToolError("prompt must not be blank.")
-    selected_model = model.strip() if model is not None else _default_model()
-    if not selected_model:
-        raise ToolError("model must not be blank.")
-    previous_id = (
-        previous_interaction_id.strip() if previous_interaction_id is not None else None
-    )
-    if previous_id == "":
-        raise ToolError("previous_interaction_id must not be blank.")
-
-    async with _google_client() as client:
-        response = await client.interactions.create(
-            model=selected_model,
-            input=prompt,
-            system_instruction=system_instruction,
-            generation_config={"max_output_tokens": max_output_tokens},
-            previous_interaction_id=previous_id,
-            store=True,
-            stream=False,
-            background=False,
-            timeout=60,
-        )
-
-    # Keep status and ID even when output is empty, for example a blocked response.
-    return InteractionResult(
-        id=response.id or "",
-        status=response.status,
-        text=response.output_text or "",
-    )
 
 
 def _not_blank(value: str, name: str) -> str:
@@ -466,38 +410,6 @@ async def generate_music(
     )
 
 
-async def analyze_media(
-    prompt: NonBlank,
-    media: Annotated[list[MediaInput], Field(min_length=1, max_length=20)],
-    system_instruction: str | None = None,
-    max_output_tokens: Annotated[int, Field(ge=1, le=65_536)] = 4096,
-    previous_interaction_id: NonBlank | None = None,
-    background: bool = False,
-    timeout_seconds: Timeout = 600,
-) -> MediaResult:
-    """Understand images, audio, video, or PDFs.
-
-    For speech recognition alone use transcribe_audio.
-    """
-    _not_blank(prompt, "prompt")
-    if not media:
-        raise ToolError("media must not be empty.")
-    contents = await media_contents(
-        media, allowed={"image", "audio", "video", "document"}
-    )
-    contents.append({"type": "text", "text": prompt})
-    return await _create_media(
-        model=DEFAULT_MODEL,
-        input=contents,
-        response_format={"type": "text"},
-        system_instruction=system_instruction,
-        generation_config={"max_output_tokens": max_output_tokens},
-        previous_interaction_id=previous_interaction_id,
-        background=background,
-        timeout_seconds=timeout_seconds,
-    )
-
-
 async def get_interaction(
     interaction_id: NonBlank,
     output_directory: NonBlank | None = None,
@@ -659,14 +571,12 @@ def create_server() -> FastMCP:
         ),
         mask_error_details=True,
     )
-    server.tool(generate_text)
     for tool in (
         generate_image,
         generate_omni,
         transcribe_audio,
         generate_speech,
         generate_music,
-        analyze_media,
         get_interaction,
         cancel_interaction,
         delete_interaction,

@@ -29,20 +29,6 @@ def test_sdk_omission_preserves_prompt_template(language):
     assert "More prose." in result
 
 
-@pytest.mark.parametrize(
-    "code",
-    [
-        'input=[{"type": "text", "text": "Ask this EXACT question."}]',
-        'prompt = "Ask this EXACT question."',
-    ],
-)
-def test_prompt_string_extracted_without_rewriting(code):
-    text = f"## Topic\n\nProse.\n\n### Python\n\n```\n{code}\n```\n## Next\n"
-    assert EXTRACTION["with_prompt_example"](text, "## Topic", "## Next") == (
-        "## Topic\n\nProse.\n\n```\nAsk this EXACT question.\n```"
-    )
-
-
 def test_image_embed_omission_does_not_rewrite_links_or_prose():
     text = (
         '![Example](https://example.test/img.png) <img src="img.png"> Original prose.'
