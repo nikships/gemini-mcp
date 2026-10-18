@@ -1,6 +1,6 @@
 # Media API documentation snapshot
 
-Verified **2026-10-06** with the repository's
+Verified **2026-10-18** with the repository's
 `retrieving-developer-knowledge` skill and the Google Developer Knowledge MCP
 `search_documents` / `get_documents` tools. Model selection comes from these
 retrieved official sources. The installed Google Gen AI SDK is used to verify

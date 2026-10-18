@@ -2,7 +2,7 @@
 
 from typing import Literal, get_args
 
-DOCS_VERIFIED_ON = "2026-10-06"
+DOCS_VERIFIED_ON = "2026-10-18"
 DEFAULT_IMAGE_MODEL = "gemini-nano-banana-2.1"
 DEFAULT_OMNI_MODEL = "gemini-omni-1.1-flash"
 DEFAULT_TRANSCRIBE_MODEL = "gemini-3.5-transcribe"

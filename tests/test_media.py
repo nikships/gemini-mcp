@@ -679,7 +679,7 @@ async def test_image_search_serializes_search_types(
 
 def test_catalog_uses_current_models_only():
     snapshot = catalog.list_media_models()
-    assert snapshot["verified_on"] == "2026-10-06"
+    assert snapshot["verified_on"] == "2026-10-18"
     defaults = {entry["default"] for entry in snapshot["models"]}
     assert defaults == {
         "gemini-nano-banana-2.1",

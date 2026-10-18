@@ -1,6 +1,6 @@
 # Official media prompting guides
 
-Retrieved **2026-10-03** (image guide re-read **2026-10-06**) using the `retrieving-developer-knowledge` skill and
+Retrieved **2026-10-03**, with every source page re-read and diffed against these excerpts on **2026-10-18** (no excerpted text had changed), using the `retrieving-developer-knowledge` skill and
 Google Developer Knowledge MCP. These are selected, near-verbatim documentation
 excerpts, not generated summaries. The tools read packaged text using
 `importlib.resources`, so they work from installed wheels without credentials,
