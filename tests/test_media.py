@@ -371,6 +371,66 @@ async def test_background_status_never_claims_success(api, status):
     assert result.text == ""
 
 
+async def test_search_function_call_is_answered_and_turn_completes(
+    sdk_transport, tmp_path
+):
+    bodies = []
+    call = {
+        "type": "function_call",
+        "id": "call_1",
+        "name": "google:image_search",
+        "arguments": {"queries": ["dyson zone"]},
+    }
+
+    def handle(request):
+        bodies.append(json.loads(request.content))
+        if len(bodies) == 1:
+            return httpx.Response(
+                200,
+                json=interaction(steps=[call], status="requires_action"),
+            )
+        return httpx.Response(
+            200,
+            json=interaction(
+                {"type": "text", "text": "Done"},
+                {
+                    "type": "image",
+                    "mime_type": "image/png",
+                    "data": encoded(b"icon"),
+                },
+            ),
+        )
+
+    sdk_transport(handle)
+    result = await server.generate_image(
+        "Headphones",
+        image_search=True,
+        output_directory=str(tmp_path),
+    )
+    assert result.status == "completed"
+    assert result.text == "Done"
+    assert await asyncio.to_thread(Path(result.outputs[1].path).read_bytes) == b"icon"
+    assert len(bodies) == 2
+    assert bodies[1]["previous_interaction_id"] == "media-id"
+    assert bodies[1]["tools"] == bodies[0]["tools"]
+    assert bodies[1]["input"] == [
+        {
+            "type": "function_result",
+            "call_id": "call_1",
+            "name": "google:image_search",
+            "result": "[]",
+        }
+    ]
+
+
+async def test_requires_action_without_search_call_is_returned_as_is(api):
+    requests = api(interaction(steps=[], status="requires_action"))
+    result = await server.generate_image("Headphones", image_search=True)
+    assert len(requests) == 1
+    assert result.status == "requires_action"
+    assert result.outputs == []
+
+
 async def test_get_cancel_delete_interactions_real_sdk(sdk_transport, tmp_path):
     requests = []
 

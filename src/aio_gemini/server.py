@@ -51,6 +51,7 @@ from aio_gemini.media import (
 
 Timeout = Annotated[int, Field(ge=1, le=1800)]
 MediaList = Annotated[list[MediaInput], Field(max_length=20)]
+MAX_SEARCH_CONTINUATIONS = 3
 
 
 @asynccontextmanager
@@ -128,19 +129,42 @@ async def _create_media(
         ).strip()
     directory = resolve_output_directory(output_directory_path)
     async with _google_client(timeout_seconds) as client:
-        response = await client.interactions.create(
-            model=model,
-            input=input,
-            response_format=response_format,
-            generation_config=generation_config,
-            tools=tools,
-            system_instruction=system_instruction,
-            previous_interaction_id=previous_interaction_id,
-            store=True,
-            background=background,
-            stream=False,
-            timeout=timeout_seconds,
-        )
+
+        async def create(input: Any, previous_id: str | None):
+            return await client.interactions.create(
+                model=model,
+                input=input,
+                response_format=response_format,
+                generation_config=generation_config,
+                tools=tools,
+                system_instruction=system_instruction,
+                previous_interaction_id=previous_id,
+                store=True,
+                background=background,
+                stream=False,
+                timeout=timeout_seconds,
+            )
+
+        response = await create(input, previous_interaction_id)
+        # Google intermittently returns a built-in search call (for example
+        # "google:image_search") to the client as requires_action instead of
+        # running it. Answering the call lets the model finish the turn.
+        for _ in range(MAX_SEARCH_CONTINUATIONS):
+            if background or response.status != "requires_action" or not response.id:
+                break
+            results = [
+                {
+                    "type": "function_result",
+                    "call_id": step.id,
+                    "name": step.name,
+                    "result": "[]",
+                }
+                for step in response.steps or []
+                if step.type == "function_call" and step.name.startswith("google:")
+            ]
+            if not results:
+                break
+            response = await create(results, response.id)
     return await media_result(
         response, directory, include_inline_data=include_inline_data
     )
